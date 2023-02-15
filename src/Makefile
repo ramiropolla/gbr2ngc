@@ -7,11 +7,11 @@ obj = $(obj_cpp:.c=.o)
 hdr = $(wildcard *.h *.hpp)
 
 CC=gcc
-COPT=-g -lm
-COPT2=-g -lm -DGERBER_TEST
+COPT=-g
+COPT2=-g -DGERBER_TEST
 
-#COPT=-O3 -lm
-#COPT2=-O3 -lm -DGERBER_TEST
+#COPT=-O3
+#COPT2=-O3 -DGERBER_TEST
 
 CXX=g++
 CXXOPT=-g --std=c++11
@@ -22,10 +22,10 @@ CCFN = $(wildcard *.c)
 CPPFN = $(wildcard *.cpp)
 
 %.o: %.c %.h
-	$(CC) $(COPT) -c $< -o $@ -lm
+	$(CC) $(COPT) -c $< -o $@
 
 %.o: %.c
-	$(CC) $(COPT) -c $< -o $@ -lm
+	$(CC) $(COPT) -c $< -o $@
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXOPT) -c $< -o $@
@@ -34,7 +34,7 @@ CPPFN = $(wildcard *.cpp)
 	$(CXX) $(CXXOPT) -c $< -o $@
 
 %.o: %.cxx %.hxx
-	$(CC) $(COPT) -c $< -o $@ -lm
+	$(CC) $(COPT) -c $< -o $@
 
 gbr2ngc: $(obj) $(hdr)
 	$(CXX) $(CXXOPT) -o $@ $(obj) $(CXXLIBS)
