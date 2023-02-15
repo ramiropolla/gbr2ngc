@@ -165,7 +165,7 @@ extern int gSeekRate;
 extern int gSeekRateSet;
 
 extern int gShowComments;
-extern int gHumanReadable;
+extern bool gHumanReadable;
 
 extern int gScanLineVertical;
 extern int gScanLineHorizontal;

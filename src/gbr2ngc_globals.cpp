@@ -38,7 +38,7 @@ int gSeekRate = 100;
 int gSeekRateSet = 0;
 
 int gShowComments = 1;
-int gHumanReadable = 1;
+bool gHumanReadable = true;
 
 int gScanLineVertical = 0;
 int gScanLineHorizontal = 0;

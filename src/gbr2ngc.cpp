@@ -228,10 +228,10 @@ bool set_option(const char option_char, const char* optarg) {
 
   switch(option_char) {
     case 'C':
-      gShowComments = bool_option(optarg, 0);
+      gShowComments = bool_option(optarg, false);
       break;
     case 'R':
-      gHumanReadable = bool_option(optarg, 0);
+      gHumanReadable = bool_option(optarg, false);
       break;
     case 'r':
       gRadius = atof(optarg);
@@ -273,7 +273,7 @@ bool set_option(const char option_char, const char* optarg) {
       break;
 
     case 'I':
-      gMetricUnits = bool_option(optarg, 0);
+      gMetricUnits = bool_option(optarg, false);
       gUnitsDefault = 0;
       break;
     case 'M':
@@ -499,7 +499,7 @@ void process_command_line_options(int argc, char **argv) {
     fprintf(gOutStream, "( radius %f )\n", gRadius);
   }
 
-  if (gHumanReadable==0) {
+  if (!gHumanReadable) {
     gShowComments = 0;
   }
 
