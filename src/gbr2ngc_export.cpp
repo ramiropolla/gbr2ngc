@@ -292,4 +292,5 @@ int export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0in_1mm, 
   if (gHumanReadable) { fprintf(ofp, "\n\n"); }
   if (gGCodeFooter)   { fprintf(ofp, "%s\n", gGCodeFooter); }
 
+  return 0;
 }

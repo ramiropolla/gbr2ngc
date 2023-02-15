@@ -907,7 +907,7 @@ int setup_aperture_blocks_r(gerber_state_t *gs, int level) {
   return 0;
 }
 
-int setup_aperture_blocks(gerber_state_t *gs) {
+void setup_aperture_blocks(gerber_state_t *gs) {
   setup_aperture_blocks_r(gs, 0);
 }
 

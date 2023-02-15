@@ -37,4 +37,6 @@ uint64_t profile_diff(void) {
   d_ms = gProfileEnd.tv_usec - gProfileStart.tv_usec;
   d_ms *= 1000000;
   d += d_ms;
+
+  return d;
 }
