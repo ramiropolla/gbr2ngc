@@ -18,8 +18,6 @@
 * Dated May 20th 2013
 */
 
-#ifdef GERBER_TEST
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -623,5 +621,3 @@ int main(int argc, char **argv) {
 
   gerber_state_clear(&gs);
 }
-
-#endif

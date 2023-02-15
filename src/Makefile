@@ -1,10 +1,23 @@
+all: gbr2ngc
+
 INSTALLDIR=/usr/local/bin
 
-src = $(wildcard *.cpp *.c *.cxx)
-csrc = $(wildcard *.c)
-obj_cpp = $(src:.cpp=.o)
-obj = $(obj_cpp:.c=.o)
-hdr = $(wildcard *.h *.hpp)
+COMMON-OBJS += gerber_interpreter.o
+COMMON-OBJS += string_ll.o
+
+GBR2NGC-OBJS += $(COMMON-OBJS)
+GBR2NGC-OBJS += clipper.o
+GBR2NGC-OBJS += gbr2ngc.o
+GBR2NGC-OBJS += gbr2ngc_aperture.o
+GBR2NGC-OBJS += gbr2ngc_construct.o
+GBR2NGC-OBJS += gbr2ngc_export.o
+GBR2NGC-OBJS += gbr2ngc_globals.o
+GBR2NGC-OBJS += gbr2ngc_heightmap.o
+GBR2NGC-OBJS += gbr2ngc_profile.o
+GBR2NGC-OBJS += tesexpr.o
+
+TEST-OBJS += $(COMMON-OBJS)
+TEST-OBJS += test_gerber_interpreter.o
 
 CC=gcc
 COPT=-g
@@ -18,33 +31,17 @@ CXXOPT=-g --std=c++11
 #CXXOPT=-O3 --std=c++11
 CXXLIB=-lstdc++ -lboost_thread -lm
 
-CCFN = $(wildcard *.c)
-CPPFN = $(wildcard *.cpp)
-
-%.o: %.c %.h
-	$(CC) $(COPT) -c $< -o $@
-
 %.o: %.c
-	$(CC) $(COPT) -c $< -o $@
-
-%.o: %.cpp %.hpp
-	$(CXX) $(CXXOPT) -c $< -o $@
+	$(CC) -o $@ $(COPT) -c $<
 
 %.o: %.cpp
-	$(CXX) $(CXXOPT) -c $< -o $@
+	$(CXX) -o $@ $(CXXOPT) -c $<
 
-%.o: %.cxx %.hxx
-	$(CC) $(COPT) -c $< -o $@
+gbr2ngc: $(GBR2NGC-OBJS)
+	$(CXX) -o $@ $(CXXOPT) $(GBR2NGC-OBJS) $(CXXLIBS)
 
-gbr2ngc: $(obj) $(hdr)
-	$(CXX) $(CXXOPT) -o $@ $(obj) $(CXXLIBS)
-
-test_gerber_interpreter: $(csrc)
-	$(CC) $(COPT2) -o $@ $^ $(COPT2)
-
-.PHONY: debug
-debug: $(obj) $(hdr)
-	$(CXX) -g -o gbr2ngc_debug $^ $(CXXLIBS)
+test_gerber_interpreter: $(TEST-OBJS)
+	$(CXX) -o $@ $(CXXOPT) $(TEST-OBJS) $(CXXLIBS)
 
 .PHONY: clean
 clean:
