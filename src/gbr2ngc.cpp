@@ -44,50 +44,50 @@
 #define ARG_GCODE_FOOTER '3'
 
 struct option gLongOption[] = {
-  {"radius" , required_argument , 0, 'r'},
-  {"fillradius" , required_argument , 0, 'F'},
+  {"radius",            required_argument, nullptr, 'r'},
+  {"fillradius",        required_argument, nullptr, 'F'},
 
-  {"input"  , required_argument , 0, 'i'},
-  {"output" , required_argument , 0, 'o'},
-  {"config-file", required_argument , 0, 'c'},
+  {"input",             required_argument, nullptr, 'i'},
+  {"output",            required_argument, nullptr, 'o'},
+  {"config-file",       required_argument, nullptr, 'c'},
 
-  {"feed"   , required_argument , 0, 'f'},
-  {"seek"   , required_argument , 0, 's'},
+  {"feed",              required_argument, nullptr, 'f'},
+  {"seek",              required_argument, nullptr, 's'},
 
-  {"zsafe"  , required_argument , 0, 'z'},
-  {"zcut"   , required_argument , 0, 'Z'},
+  {"zsafe",             required_argument, nullptr, 'z'},
+  {"zcut",              required_argument, nullptr, 'Z'},
 
-  {"gcode-header", required_argument, 0, ARG_GCODE_HEADER},
-  {"gcode-footer", required_argument, 0, ARG_GCODE_FOOTER},
+  {"gcode-header",      required_argument, nullptr, ARG_GCODE_HEADER},
+  {"gcode-footer",      required_argument, nullptr, ARG_GCODE_FOOTER},
 
-  {"segment-length", required_argument, 0, 'l'},
+  {"segment-length",    required_argument, nullptr, 'l'},
 
-  {"metric" , no_argument       , 0, 'M'},
-  {"inches" , no_argument       , 0, 'I'},
-//  {"scan"   , no_argument       , 0, 'H'},
-//  {"scanvert",no_argument       , 0, 'V'},
+  {"metric",            no_argument,       nullptr, 'M'},
+  {"inches",            no_argument,       nullptr, 'I'},
+//   {"scan",              no_argument,       nullptr, 'H'},
+//   {"scanvert",          no_argument,       nullptr, 'V'},
 
-  {"no-comment", no_argument      , 0, 'C'},
-  {"machine-readable", no_argument      , 0, 'R'},
+  {"no-comment",        no_argument,       nullptr, 'C'},
+  {"machine-readable",  no_argument,       nullptr, 'R'},
 
-  {"horizontal", no_argument     , 0, 'H'},
-  {"vertical", no_argument       , 0, 'V'},
-  {"zengarden", no_argument     , 0, 'G'},
+  {"horizontal",        no_argument,       nullptr, 'H'},
+  {"vertical",          no_argument,       nullptr, 'V'},
+  {"zengarden",         no_argument,       nullptr, 'G'},
 
-  {"print-polygon", no_argument     , 0, 'P'},
+  {"print-polygon",     no_argument,       nullptr, 'P'},
 
-  {"invertfill"     , no_argument       , &gInvertFlag, 1},
-  {"simple-infill"  , no_argument       , &gSimpleInfill, 1},
-  {"no-outline"     , no_argument       , &gDrawOutline, 0},
+  {"invertfill",        no_argument,       &gInvertFlag, 1},
+  {"simple-infill",     no_argument,       &gSimpleInfill, 1},
+  {"no-outline",        no_argument,       &gDrawOutline, 0},
 
-  {"height-file"      , required_argument, 0, 0},
-  {"height-algorithm" , required_argument, 0, 0},
+  {"height-file",       required_argument, nullptr, 0},
+  {"height-algorithm",  required_argument, nullptr, 0},
 
-  {"verbose", no_argument       , 0, 'v'},
-  {"version", no_argument       , 0, 'N'},
-  {"help"   , no_argument       , 0, 'h'},
+  {"verbose",           no_argument,       nullptr, 'v'},
+  {"version",           no_argument,       nullptr, 'N'},
+  {"help",              no_argument,       nullptr, 'h'},
 
-  {0, 0, 0, 0}
+  {nullptr, no_argument, nullptr, 0}
 };
 
 char gOptionDescription[][1024] =
