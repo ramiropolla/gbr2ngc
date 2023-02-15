@@ -37,7 +37,7 @@ int gFeedRateSet = 0;
 int gSeekRate = 100;
 int gSeekRateSet = 0;
 
-int gShowComments = 1;
+bool gShowComments = true;
 bool gHumanReadable = true;
 
 int gScanLineVertical = 0;

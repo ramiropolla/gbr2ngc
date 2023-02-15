@@ -164,7 +164,7 @@ extern int gFeedRateSet;
 extern int gSeekRate;
 extern int gSeekRateSet;
 
-extern int gShowComments;
+extern bool gShowComments;
 extern bool gHumanReadable;
 
 extern int gScanLineVertical;

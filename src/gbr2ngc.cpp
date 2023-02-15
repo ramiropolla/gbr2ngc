@@ -500,7 +500,7 @@ void process_command_line_options(int argc, char **argv) {
   }
 
   if (!gHumanReadable) {
-    gShowComments = 0;
+    gShowComments = false;
   }
 
 }
