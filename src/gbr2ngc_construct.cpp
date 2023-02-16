@@ -439,7 +439,7 @@ void _mulvec3(double *result, double *M, double *v) {
 //
 // * For simple geometry, it's union and difference operations of aperture
 //   definitions or other primitives
-// * Apertures have an array of polarity to construc tthem piece wise
+// * Apertures have an array of polarity to construct them piece wise
 // * step repeat and aperture block recur to resolve the geometry
 // * Since polarity and other state information is global, the root
 //   `gerber_state_t` structure is updated and referenced to determine
