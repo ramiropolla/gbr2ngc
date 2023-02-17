@@ -64,8 +64,6 @@ struct option gLongOption[] = {
 
   {"metric",            no_argument,       nullptr, 'M'},
   {"inches",            no_argument,       nullptr, 'I'},
-//   {"scan",              no_argument,       nullptr, 'H'},
-//   {"scanvert",          no_argument,       nullptr, 'V'},
 
   {"no-comment",        no_argument,       nullptr, 'C'},
   {"machine-readable",  no_argument,       nullptr, 'R'},
@@ -134,7 +132,6 @@ char gOptionDescription[][1024] =
   "help (this screen)",
 
   "n/a"
-
 };
 
 int gPrintPolygon = 0;
@@ -758,7 +755,6 @@ void do_horizontal_infill( Paths &src, Paths &dst ) {
   if (gDrawOutline) {
     dst.insert( dst.end(), src.begin(), src.end());
   }
-
 }
 
 

@@ -1840,9 +1840,7 @@ void parse_sr(gerber_state_t *gs, char *linebuf_orig) {
 
     gs->absr_active = 1;
     gs->_item_cur = sr_item;
-
   }
-
   // end Step Repeat
   //
   else {
@@ -1874,7 +1872,6 @@ void parse_sr(gerber_state_t *gs, char *linebuf_orig) {
     if (gs->depth == 1) {
       gs->_root_gerber_state->absr_active = 0;
     }
-
   }
 
   gs->gerber_read_state = GRS_NONE;

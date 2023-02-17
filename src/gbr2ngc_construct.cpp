@@ -210,7 +210,6 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
         first = 0;
 
       }
-
     }
     else if (contour->type == GERBER_REGION_MOVE) {
 
@@ -604,11 +603,8 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
           dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
           dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
           dpnt[2] = 1.0;
-
           _mulvec3(dpnt, transformMatrix, dpnt);
-
           point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
-
         }
       }
 
@@ -621,11 +617,8 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
           dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
           dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
           dpnt[2] = 1.0;
-
           _mulvec3(dpnt, transformMatrix, dpnt);
-
           point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
-
         }
       }
 
@@ -699,9 +692,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
             dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
             dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
             dpnt[2] = 1.0;
-
             _mulvec3(dpnt, transformMatrix, dpnt);
-
             point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
           }
         }
@@ -724,9 +715,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
             dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
             dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
             dpnt[2] = 1.0;
-
             _mulvec3(dpnt, transformMatrix, dpnt);
-
             point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
           }
         }
@@ -792,11 +781,8 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
             dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
             dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
             dpnt[2] = 1.0;
-
             _mulvec3(dpnt, transformMatrix, dpnt);
-
             tmp_path.push_back( dtoc( dpnt[0], dpnt[1] ) );
-
           }
 
           if (tmp_path.size() < 2) { fprintf(stdout, "## WARNING, tmp_path.size() %i\n", (int)tmp_path.size()); fflush(stdout); continue; }
@@ -921,10 +907,8 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
           gs->mirror_axis     = item_nod->step_repeat->mirror_axis;
           gs->rotation_degree = item_nod->step_repeat->rotation_degree;
           gs->scale           = item_nod->step_repeat->scale;
-
         }
       }
-
     }
   }
 

@@ -44,7 +44,7 @@ static int _get_segment_count(double r, double min_segment_length, int min_segme
 //------------
 
 void realize_circle( gerber_state_t *gs,
-										 Aperture_realization &ap,
+                     Aperture_realization &ap,
                      double r,
                      int min_segments = 8,
                      double min_segment_length = 0.01 ) {
@@ -68,7 +68,7 @@ void realize_circle( gerber_state_t *gs,
 }
 
 void realize_rectangle( gerber_state_t *gs,
-												Aperture_realization &ap,
+                        Aperture_realization &ap,
                         double x,
                         double y ) {
   int idx;
@@ -88,7 +88,7 @@ void realize_rectangle( gerber_state_t *gs,
 
 
 void realize_obround( gerber_state_t *gs,
-											Aperture_realization &ap,
+                      Aperture_realization &ap,
                       double x_len,
                       double y_len,
                       int min_segments = 8,
@@ -161,7 +161,7 @@ void realize_obround( gerber_state_t *gs,
 }
 
 void realize_polygon( gerber_state_t *gs,
-											Aperture_realization &ap,
+                      Aperture_realization &ap,
                       double r,
                       int n_vert,
                       double rot_deg ) {
@@ -188,7 +188,7 @@ void realize_polygon( gerber_state_t *gs,
 }
 
 void realize_hole( gerber_state_t *gs,
-									 Aperture_realization &ap,
+                   Aperture_realization &ap,
                    double r,
                    int min_segments = 8,
                    double min_segment_length = 0.01 ) {
@@ -813,7 +813,6 @@ static void _thermal_arc_path_ccw( Path &path,
     prv_pnt.X = pnt.X;
     prv_pnt.Y = pnt.Y;
   }
-
 }
 
 // `am_node` holds information about the macro, including the (text) lines to be interpreted
@@ -959,7 +958,7 @@ int add_AM_thermal( am_ll_node_t *am_node,
 // By the time we get here, the aperture macro parameters have been evaluated
 // though the aperture macro body still needs to be evaluated.
 // Each evaluation of the macro line is done in the corresponding `add_AM_*` functions.
-// 
+//
 // return 0 on success
 // non-zero on error
 //
@@ -1323,9 +1322,6 @@ int realize_apertures_r(gerber_state_t *gs, int level) {
 
     else if (item->type == GERBER_AB) {
 
-      //_construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale);
-      //_mulmat3x3(transformMatrix, transformMatrix, transformMatrixParent);
-
       item->aperture_block->polarity         = gs->polarity;
       item->aperture_block->mirror_axis      = gs->mirror_axis;
       item->aperture_block->rotation_degree  = gs->rotation_degree;
@@ -1343,9 +1339,6 @@ int realize_apertures_r(gerber_state_t *gs, int level) {
     }
 
     else if (item->type == GERBER_SR) {
-
-      //_construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale);
-      //_mulmat3x3(transformMatrix, transformMatrix, transformMatrixParent);
 
       item->step_repeat->polarity         = gs->polarity;
       item->step_repeat->mirror_axis      = gs->mirror_axis;

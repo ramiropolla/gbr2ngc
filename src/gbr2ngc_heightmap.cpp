@@ -55,7 +55,7 @@ int read_heightmap( std::string &fn, std::vector< double > &heightmap ) {
 
 //            _                   _ _
 //   ___ __ _| |_ _ __ ___  _   _| | |      _ __ ___  _ __ ___
-//  / __/ _` | __| '_ ` _ \| | | | | |_____| '__/ _ \| '_ ` _ \
+//  / __/ _` | __| '_ ` _ \| | | | | |_____| '__/ _ \| '_ ` _ \.
 // | (_| (_| | |_| | | | | | |_| | | |_____| | | (_) | | | | | |
 //  \___\__,_|\__|_| |_| |_|\__,_|_|_|     |_|  \___/|_| |_| |_|
 //
@@ -232,8 +232,6 @@ int HeightMap::setup_catmull_rom(std::vector<double> &_heightmap) {
     }
   }
 
-
-
   return 0;
 }
 
@@ -379,8 +377,6 @@ int interpolate_height_catmull_rom_grid(std::vector< double > &xyz, std::vector<
     s_x = (x - x_pnt[x_idx] ) / del_x;
     s_y = (y - y_pnt[y_idx] ) / del_y;
     xyz[xyz_idx+2] = catmull_rom_2d(s_x, s_y, subgrid);
-
-
   }
 
   // sort the resultin `xyz` array
@@ -439,7 +435,6 @@ int interpolate_height_idw(std::vector< double > &xyz, std::vector< double > &he
     }
 
     xyz[i+2] = interpolated_z;
-
   }
 
   // sort the resultin `xyz` array
@@ -707,9 +702,7 @@ int HeightMap::setup_delaunay(std::vector< double > &_heightmap) {
 
       }
     }
-
   }
-
 
   return 0;
 }
@@ -739,7 +732,6 @@ int HeightMap::zOffset_delaunay(double &z, double x, double y) {
       z = _p3[2];
       break;
     }
-
   }
 
   if (j==m_grid_idx[idx].size()) { return -1; }

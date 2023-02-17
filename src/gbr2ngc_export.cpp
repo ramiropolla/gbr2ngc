@@ -96,7 +96,6 @@ void cut(FILE* file, const char* axes, double one, double two=0, double three=0)
     }
   }
 
-
   fprintf(file, "\n");
 }
 
