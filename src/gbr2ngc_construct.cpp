@@ -389,23 +389,22 @@ static void _construct_transform_matrix(double *M, int mirror_axis, double rot_d
 }
 
 static void _mulmat3x3(double *result, const double *A, const double *B) {
-  int r,c,k;
   double tm[3*3];
   memset(tm, 0, sizeof(double)*3*3);
-  for (r=0; r<3; r++) for (c=0; c<3; c++) for (k=0;  k<3; k++) {
-    tm[3*r + c] += A[3*r + k] * B[3*k + c];
-  }
+  for (int r=0; r<3; r++)
+    for (int c=0; c<3; c++)
+      for (int k=0;  k<3; k++)
+        tm[3*r + c] += A[3*r + k] * B[3*k + c];
   memcpy(result, tm, sizeof(double)*3*3);
   return;
 }
 
 static void _mulvec3(double *result, const double *M, const double *v) {
-  int r,c,k;
   double tv[3];
   memset(tv, 0, sizeof(double)*3);
-  for (r=0; r<3; r++) for (k=0; k<3; k++) {
-    tv[r] += M[3*r + k] * v[k];
-  }
+  for (int r=0; r<3; r++)
+    for (int k=0; k<3; k++)
+      tv[r] += M[3*r + k] * v[k];
   memcpy(v, tv, sizeof(double)*3);
 }
 
