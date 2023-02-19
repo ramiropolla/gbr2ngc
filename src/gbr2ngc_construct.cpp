@@ -50,10 +50,8 @@ typedef std::map< Gerber_point_2, int , Gerber_point_2_cmp  > HolePosMap;
 //--
 
 static int _get_segment_count(double r, double min_segment_length, int min_segments) {
-  int segments;
-  double c, theta, z;
+  double c, z;
 
-  segments=min_segments;
   c = 2.0 * M_PI * r;
 
   z = c / min_segment_length;
@@ -287,8 +285,6 @@ int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_
 
   Clipper clip;
 
-  gerber_item_ll_t *xnod;
-
   // Initially populate p vector
   //
   populate_gerber_point_vector_from_contour( gs, p, contour );
@@ -446,7 +442,7 @@ void _mulvec3(double *result, double *M, double *v) {
 //
 //
 int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double *transformMatrixParent, int level) {
-  unsigned int i, ii, jj, _i, _j;
+  unsigned int i, ii, jj;
 
   gerber_item_ll_t *item_nod;
   gerber_item_ll_t *region;
@@ -454,7 +450,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
   PathSet temp_pwh_vec;
   IntPoint prev_pnt, cur_pnt, _origin;
 
-  int n=0, name=0, _path_polarity=1;
+  int name=0;
   int polarity = 1, d_name = -1;
   int pmrs_active = 0;
 
@@ -465,14 +461,11 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
 
   double dx, dy;
 
-  cInt tX, tY, uX, uY, vX, vY;
   IntPoint _pnt0, _pnt1, _pnt;
 
   IntPoint _prv_arc_pnt;
   double ang_rad, tx, ty, tr, _p;
   int n_seg = 16;
-
-  double _odx, _ody,  _x, _y;
 
   int stack_polarity, stack_d_name, stack_pmrs_active;
   int stack_mirror;
@@ -483,8 +476,6 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
 
   double transformMatrix[3*3];
   double dpnt[3];
-
-  struct timeval tv;
 
   memcpy(transformMatrix, transformMatrixParent, sizeof(double)*3*3);
   memset( dpnt, 0, sizeof(double)*3);
