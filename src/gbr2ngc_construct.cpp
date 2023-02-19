@@ -766,7 +766,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
           if (tmp_path.size() < 2) { fprintf(stdout, "## WARNING, tmp_path.size() %i\n", (int)tmp_path.size()); fflush(stdout); continue; }
 
           int last_idx = (int)(tmp_path.size()-1);
-          if ((tmp_path[0].X != tmp_path[last_idx].X) &&
+          if ((tmp_path[0].X != tmp_path[last_idx].X) ||
               (tmp_path[0].Y != tmp_path[last_idx].Y)) {
             fprintf(stdout, "## WARNING, tmp_path for %i is not closed!\n", name); fflush(stdout);
             tmp_path.push_back(tmp_path[0]);
