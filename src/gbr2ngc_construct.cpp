@@ -348,10 +348,8 @@ bool isccw( Path &p ) {
 //--
 
 static void _construct_transform_matrix(double *M, int mirror_axis, double rot_deg, double scale, double tx, double ty) {
-  double c, s;
-
-  c = cos(rot_deg * M_PI / 180.0 );
-  s = sin(rot_deg * M_PI / 180.0 );
+  double c = cos(rot_deg * M_PI / 180.0);
+  double s = sin(rot_deg * M_PI / 180.0);
 
   memset(M, 0, sizeof(double)*3*3);
   M[0] = 1.0;
