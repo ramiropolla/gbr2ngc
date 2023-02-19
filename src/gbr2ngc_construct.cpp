@@ -388,7 +388,7 @@ static void _construct_transform_matrix(double *M, int mirror_axis, double rot_d
   return;
 }
 
-static void _mulmat3x3(double *result, double *A, double *B) {
+static void _mulmat3x3(double *result, const double *A, const double *B) {
   int r,c,k;
   double tm[3*3];
   memset(tm, 0, sizeof(double)*3*3);
@@ -399,7 +399,7 @@ static void _mulmat3x3(double *result, double *A, double *B) {
   return;
 }
 
-void _mulvec3(double *result, double *M, double *v) {
+static void _mulvec3(double *result, const double *M, const double *v) {
   int r,c,k;
   double tv[3];
   memset(tv, 0, sizeof(double)*3);
