@@ -134,7 +134,8 @@ void add_hole( Paths &hole_vec,
 void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
                                                 std::vector< Gerber_point_2 > &p,
                                                 gerber_item_ll_t *contour) {
-  int first=1, n_seg=16, n;
+  bool first = true;
+  int n_seg=16, n;
   double C = 1000000000000.0;
   Gerber_point_2 prev_pnt;
   Gerber_point_2 dpnt;
@@ -173,8 +174,7 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       else { p.push_back( dpnt ); }
 
       prev_pnt = dpnt;
-      first = 0;
-
+      first = false;
     }
     else if (contour->type == GERBER_REGION_SEGMENT_ARC) {
 
@@ -205,8 +205,7 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
         else { p.push_back( dpnt ); }
 
         prev_pnt = dpnt;
-        first = 0;
-
+        first = false;
       }
     }
     else if (contour->type == GERBER_REGION_MOVE) {
@@ -222,7 +221,7 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       else { p.push_back( dpnt ); }
 
       prev_pnt = dpnt;
-      first = 0;
+      first = false;
     }
     else {
       fprintf(stderr, "WARNING: populate_gerber_point_vector_from_contour found unknown type %i\n", contour->type);
