@@ -345,20 +345,6 @@ bool isccw( Path &p ) {
   return false;
 }
 
-static void debug_gAperture() {
-  int key;
-  Aperture_realization *rlz;
-  ApertureNameMap::iterator it;
-
-  for (it = gAperture.begin(); it != gAperture.end(); ++it ) {
-    key = it->first;
-    rlz = &(it->second);
-
-    printf("## debug_gAperture: key:%i\n", key);
-  }
-
-}
-
 //--
 
 static void _construct_transform_matrix(double *M, int mirror_axis, double rot_deg, double scale, double tx, double ty) {
