@@ -396,7 +396,6 @@ static void _mulmat3x3(double *result, const double *A, const double *B) {
       for (int k=0;  k<3; k++)
         tm[3*r + c] += A[3*r + k] * B[3*k + c];
   memcpy(result, tm, sizeof(double)*3*3);
-  return;
 }
 
 static void _mulvec3(double *result, const double *M, const double *v) {
@@ -405,7 +404,7 @@ static void _mulvec3(double *result, const double *M, const double *v) {
   for (int r=0; r<3; r++)
     for (int k=0; k<3; k++)
       tv[r] += M[3*r + k] * v[k];
-  memcpy(v, tv, sizeof(double)*3);
+  memcpy(result, tv, sizeof(double)*3);
 }
 
 
