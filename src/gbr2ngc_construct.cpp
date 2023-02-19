@@ -143,6 +143,9 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
   double ang_rad, tr, tx, ty, _p;
   int _segment;
 
+  prev_pnt.ix = 0;
+  prev_pnt.iy = 0;
+
   // Get rid of points that are duplicated next to each other.
   // It does no good to have them and it just makes things more
   // complicated downstream to work around them.
