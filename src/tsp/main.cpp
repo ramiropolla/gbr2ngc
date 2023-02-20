@@ -78,7 +78,7 @@ Node* newNode(int parentMatrix[N][N], vector<pair<int, int>> const &path,
 }
 
 // Function to reduce each row so that there must be at least one zero in each row
-int rowReduction(int reducedMatrix[N][N], int row[N])
+static void rowReduction(int reducedMatrix[N][N], int row[N])
 {
   // initialize row array to `INFINITY`
   fill_n(row, N, INF);
@@ -108,7 +108,7 @@ int rowReduction(int reducedMatrix[N][N], int row[N])
 
 // Function to reduce each column so that there must be at least one zero
 // in each column
-int columnReduction(int reducedMatrix[N][N], int col[N])
+static void columnReduction(int reducedMatrix[N][N], int col[N])
 {
   // initialize all elements of array `col` with `INFINITY`
   fill_n(col, N, INF);
@@ -163,8 +163,8 @@ int calculateCost(int reducedMatrix[N][N])
 // Function to print list of cities visited following least cost
 void printPath(vector<pair<int, int>> const &list)
 {
-  for (int i = 0; i < list.size(); i++) {
-    cout << list[i].first + 1 << " —> " << list[i].second + 1 << endl;
+  for (size_t i = 0; i < list.size(); i++) {
+    cout << list[i].first + 1 << " -> " << list[i].second + 1 << endl;
   }
 }
 
@@ -248,6 +248,9 @@ int solve(int costMatrix[N][N])
     // So no need for a parent node while printing the solution.
     delete min;
   }
+
+  /* never reached */
+  return 0;
 }
 
 int main()
@@ -310,7 +313,7 @@ int main()
   };
   */
 
-  cout << "\n\nTotal cost is " << solve(costMatrix);
+  cout << "Total cost is " << solve(costMatrix) << endl;
 
   return 0;
 }
