@@ -1304,17 +1304,6 @@ int realize_apertures_r(gerber_state_t *gs, int level) {
         default: break;
       }
 
-
-      // save a 'double' copy of the paths list
-      //
-      ap.m_path_d.clear();
-      for (ii=0; ii<ap.m_path.size(); ii++) {
-        ap.m_path_d.push_back(empty_d_path);
-        for (jj=0; jj<ap.m_path[ii].size(); jj++) {
-          ap.m_path_d[ii].push_back( DoublePoint( ctod(ap.m_path[ii][jj].X), ctod(ap.m_path[ii][jj].Y) ) );
-        }
-      }
-
       gAperture.insert( ApertureNameMapPair(ap.m_name, ap) );
       gApertureName.push_back(ap.m_name);
 

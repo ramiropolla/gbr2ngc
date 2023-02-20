@@ -68,8 +68,6 @@ class Aperture_realization {
 
     int m_name;
     int m_type;
-    int m_crop_type;
-    double m_crop[5];
 
     std::string m_macro_name;
     std::vector< double > m_macro_param;
@@ -87,14 +85,6 @@ class Aperture_realization {
     // 0 - subtractive
     //
     std::vector< int > m_exposure;
-
-    // Final realized geometry from m_path and m_exposure.
-    //
-    Paths m_geom;
-
-    // Copy of paths as doubles
-    //
-    std::vector< std::vector< DoublePoint > > m_path_d;
 };
 
 typedef std::map<int, Aperture_realization> ApertureNameMap;
