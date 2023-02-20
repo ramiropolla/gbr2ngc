@@ -411,13 +411,8 @@ void gerber_state_clear(gerber_state_t *gs) {
 
 //------------------------
 
-static void _pps(FILE *fp, int n) {
-  int i;
-  for (i=0;i<n;i++) { fprintf(fp, "."); }
-}
-
 void gerber_report_state(gerber_state_t *gs) {
-  int i, j, k;
+  int i, k;
 
   aperture_data_t *ap;
 
@@ -549,8 +544,7 @@ void parse_error(char *s, int line_no, char *l) {
 //------------------------
 
 char *skip_whitespace(char *s) {
-  while ((*s) &&
-         ( (*s == '\n') || (*s == ' ') || (*s == '\t') ) ) {
+  while ( (*s == '\n') || (*s == ' ') || (*s == '\t') ) {
     s++;
   }
   return s;
@@ -587,10 +581,6 @@ void strip_whitespace(char *rop, char *op) {
 }
 
 #define N_FUNCTION_CODE 13
-
-int default_function_code_handler(gerber_state_t *gs, char *buf) {
-  printf("default_function_code_handler: '%s'\n", buf);
-}
 
 int munch_line(char *linebuf, int n, FILE *fp) {
   char *chp;
@@ -743,7 +733,6 @@ int get_image_parameter_code(char *linebuf) {
 
 void parse_fs(gerber_state_t *gs, char *linebuf) {
   char *chp;
-  int a, b;
 
   chp = linebuf + 3;
   if ((*chp != 'L') && (*chp != 'T')) { parse_error("bad FS zero omission mode", gs->line_no, linebuf); }
@@ -819,8 +808,8 @@ void parse_mo(gerber_state_t *gs, char *linebuf) {
 
 //------------------------
 
-void print_aperture_data(gerber_state_t *gs) {
-  int i;
+void print_aperture_data(gerber_state_t *gs)
+{
   aperture_data_t *a_nod;
 
   printf("\n");
@@ -833,11 +822,13 @@ void print_aperture_data(gerber_state_t *gs) {
     printf("# type: %i\n", a_nod->type);
     printf("# crop_type: %i\n", a_nod->crop_type);
     printf("# crop[5]:");
-    for (i=0; i<5; i++) { printf(" %f", a_nod->crop[i]); }
+    for (size_t i = 0; i < 5; i++) {
+      printf(" %f", a_nod->crop[i]);
+    }
     printf("\n");
     printf("# macro_name: %s\n", a_nod->macro_name ? a_nod->macro_name : "" );
-    printf("# macro_param[%i]:", a_nod->macro_param_count);
-    for (i=0; i<a_nod->macro_param_count; i++) {
+    printf("# macro_param[%zu]:", a_nod->macro_param_count);
+    for (size_t i = 0; i < a_nod->macro_param_count; i++) {
       printf(" %f", a_nod->macro_param[i]);
     }
     printf("\n");
@@ -856,8 +847,8 @@ void print_aperture_data(gerber_state_t *gs) {
 // The array of numbers are separated by an 'X'.
 //
 void parse_extended_ad(gerber_state_t *gs, char *linebuf) {
-  int i, complete=0, n=0, param_count=0;
-  char *chp, *s, ch, *chp_end=NULL;
+  int i, n=0, param_count=0;
+  char *chp, ch, *chp_end=NULL;
   long int d_code;
 
   gerber_item_ll_t *item_nod;
@@ -934,7 +925,7 @@ void parse_extended_ad(gerber_state_t *gs, char *linebuf) {
 
 void parse_ad(gerber_state_t *gs, char *linebuf_orig) {
   char *linebuf;
-  char *chp_beg, *chp, *s, ch;
+  char *chp_beg, *chp;
   char aperture_code;
   int d_code, complete=0, n=0;
 
@@ -1046,7 +1037,7 @@ void parse_ad(gerber_state_t *gs, char *linebuf_orig) {
 //
 void parse_ab(gerber_state_t *gs, char *linebuf_orig) {
   char *linebuf;
-  char *chp_beg, *chp, *s, ch;
+  char *chp_beg, *chp;
   char save_char;
   int d_code, complete=0, n=0;
 
@@ -1181,8 +1172,8 @@ void parse_ab(gerber_state_t *gs, char *linebuf_orig) {
 // -----------------------------------------------
 // -----------------------------------------------
 
-void am_node_print(am_ll_node_t *nod) {
-  int i;
+static void am_node_print(am_ll_node_t *nod)
+{
   char *typs[10] = {
     "AM_ENUM_NAME",
     "AM_ENUM_COMMENT",
@@ -1201,21 +1192,22 @@ void am_node_print(am_ll_node_t *nod) {
     printf("#   name: %s\n", nod->name ? nod->name : "" );
     printf("#   comment: %s\n", nod->comment ? nod->comment : "" );
     printf("#   varname: %s\n", nod->varname ? nod->varname : "" );
-    printf("#   eval_line[%i]:", nod->n_eval_line);
-    for (i=0; i<nod->n_eval_line; i++) {
-      printf(" {$%i:\"%s\"}", i+1, nod->eval_line[i]);
+    printf("#   eval_line[%zu]:", nod->n_eval_line);
+    for (size_t i = 0; i < nod->n_eval_line; i++) {
+      printf(" {$%zu:\"%s\"}", i+1, nod->eval_line[i]);
     }
     printf("\n");
     nod = nod->next;
   }
 }
 
-void am_fill_eval_line(am_ll_node_t *nod, int n_eval_line, char *chp, int *end_pos, int skip_field) {
-  int i, apos=0;
+static void am_fill_eval_line(am_ll_node_t *nod, size_t n_eval_line, char *chp, int *end_pos, int skip_field)
+{
+  int apos=0;
 
   nod->n_eval_line = n_eval_line;
   nod->eval_line = (char **)malloc(sizeof(char **)*(nod->n_eval_line));
-  for (i=0; i<nod->n_eval_line; i++) {
+  for (size_t i = 0; i < nod->n_eval_line; i++) {
     if ((i+skip_field-1)<0) { apos = 0; }
     else { apos = end_pos[i+(skip_field-1)]+1; }
 
@@ -1224,8 +1216,8 @@ void am_fill_eval_line(am_ll_node_t *nod, int n_eval_line, char *chp, int *end_p
 
 }
 
-void am_ll_node_free(am_ll_node_t *nod) {
-  int i;
+static void am_ll_node_free(am_ll_node_t *nod)
+{
   am_ll_node_t *tnod;
 
   while (nod) {
@@ -1235,7 +1227,7 @@ void am_ll_node_free(am_ll_node_t *nod) {
     if (tnod->name) { free(tnod->name); }
     if (tnod->comment) { free(tnod->comment); }
     if (tnod->varname) { free(tnod->varname); }
-    for (i=0; i<tnod->n_eval_line; i++) {
+    for (size_t i=0; i<tnod->n_eval_line; i++) {
       free(tnod->eval_line[i]);
     }
     if (tnod->eval_line) { free(tnod->eval_line); }
@@ -1247,9 +1239,9 @@ void am_ll_node_free(am_ll_node_t *nod) {
 
 // duplicate name
 //
-am_ll_node_t *am_ll_node_create_name_n(char *name, int n) {
+am_ll_node_t *am_ll_node_create_name_n(char *name, int n)
+{
   am_ll_node_t *nod;
-  char *s;
 
   nod = (am_ll_node_t *)malloc(sizeof(am_ll_node_t));
   memset(nod, 0, sizeof(am_ll_node_t));
@@ -1261,9 +1253,9 @@ am_ll_node_t *am_ll_node_create_name_n(char *name, int n) {
 
 // duplicate whole comment, including code
 //
-am_ll_node_t * am_ll_node_create_comment_n(char *comment, int n) {
+am_ll_node_t * am_ll_node_create_comment_n(char *comment, int n)
+{
   am_ll_node_t *nod;
-  char *s;
 
   nod = (am_ll_node_t *)malloc(sizeof(am_ll_node_t));
   memset(nod, 0, sizeof(am_ll_node_t));
@@ -1347,9 +1339,10 @@ int am_parse_end_pos(char *s, int *end_pos, int n_end_pos, int n_opt_param) {
 // eval_line holds diameter, center_x, center_y and rotation
 // (4 in total).
 //
-am_ll_node_t * am_ll_node_create_circle_n(char *s, int n) {
-   am_ll_node_t *nod;
-  int n_end_pos=6, end_pos[6], i, r;
+am_ll_node_t * am_ll_node_create_circle_n(char *s, int n)
+{
+  am_ll_node_t *nod;
+  int n_end_pos=6, end_pos[6], r;
 
   r = am_parse_end_pos(s, end_pos, n_end_pos, 1);
   if (r<0) { return NULL; }
@@ -1370,9 +1363,10 @@ am_ll_node_t * am_ll_node_create_circle_n(char *s, int n) {
 // eval_line holds width, start_x, start_y, end_x, end_y, rotation
 // (6 in total).
 //
-am_ll_node_t * am_ll_node_create_vector_line_n(char *s, int n) {
+static am_ll_node_t *am_ll_node_create_vector_line_n(char *s, int n)
+{
   am_ll_node_t *nod;
-  int n_end_pos=8, end_pos[8], i, r;
+  int n_end_pos=8, end_pos[8], r;
 
   r = am_parse_end_pos(s, end_pos, n_end_pos, 0);
   if (r<0) { return NULL; }
@@ -1392,7 +1386,7 @@ am_ll_node_t * am_ll_node_create_vector_line_n(char *s, int n) {
 //
 am_ll_node_t * am_ll_node_create_center_line_n(char *s, int n) {
   am_ll_node_t *nod;
-  int n_end_pos=7, end_pos[7], i, r;
+  int n_end_pos=7, end_pos[7], r;
 
   r = am_parse_end_pos(s, end_pos, n_end_pos, 0);
   if (r<0) { return NULL; }
@@ -1444,7 +1438,7 @@ am_ll_node_t * am_ll_node_create_outline_n(char *s, int n) {
 
 am_ll_node_t * am_ll_node_create_polygon_n(char *s, int n) {
   am_ll_node_t *nod;
-  int n_end_pos=7, end_pos[7], i, r;
+  int n_end_pos=7, end_pos[7], r;
 
   r = am_parse_end_pos(s, end_pos, n_end_pos, 0);
   if (r<0) { return NULL; }
@@ -1459,7 +1453,7 @@ am_ll_node_t * am_ll_node_create_polygon_n(char *s, int n) {
 
 am_ll_node_t * am_ll_node_create_moire_n(char *s, int n) {
   am_ll_node_t *nod;
-  int n_end_pos=10, end_pos[10], i, r;
+  int n_end_pos=10, end_pos[10], r;
 
   r = am_parse_end_pos(s, end_pos, n_end_pos, 0);
   if (r<0) { return NULL; }
@@ -1479,7 +1473,7 @@ am_ll_node_t * am_ll_node_create_moire_n(char *s, int n) {
 //
 am_ll_node_t * am_ll_node_create_thermal_n(char *s, int n) {
   am_ll_node_t *nod;
-  int n_end_pos=7, end_pos[7], i, r;
+  int n_end_pos=7, end_pos[7], r;
 
   r = am_parse_end_pos(s, end_pos, n_end_pos, 0);
   if (r<0) { return NULL; }
@@ -1514,7 +1508,7 @@ void am_lib_print(gerber_state_t *gs) {
 //
 void parse_am(gerber_state_t *gs, char *linebuf) {
   char *chp=NULL, *dup_str=NULL;
-  int i, n=0, complete=0;
+  int n=0, complete=0;
   gerber_state_t *root_gs;
 
   gerber_item_ll_t *item_nod;
@@ -1632,7 +1626,7 @@ void parse_ln(gerber_state_t *gs, char *linebuf) {
 // load polarity
 //
 void parse_lp(gerber_state_t *gs, char *linebuf) {
-  int polarity = -1, ch;
+  int ch;
   char *chp;
 
   gerber_item_ll_t *item_nod;
@@ -1748,9 +1742,10 @@ void parse_ls(gerber_state_t *gs, char *linebuf) {
 
 // step repeat.
 //
-void parse_sr(gerber_state_t *gs, char *linebuf_orig) {
-  char *linebuf, *chp_beg, *chp, *s, ch, save_char;
-  int name=0, d_code, complete=0, n=0, dn;
+void parse_sr(gerber_state_t *gs, char *linebuf_orig)
+{
+  char *linebuf, *chp;
+  int complete=0, n=0, dn;
   int begin_sr_block = -1, _x_rep=0, _y_rep=0;
   double _i_distance=0.0, _j_distance=0.0;
 
@@ -1787,9 +1782,8 @@ void parse_sr(gerber_state_t *gs, char *linebuf_orig) {
 
   // begin Aperture Block
   //
-  if (begin_sr_block == 1) {
-    chp_beg = chp;
-
+  if (begin_sr_block == 1)
+  {
     chp = skip_whitespace(chp);
 
     if ((!chp) || (!(*chp)) || ((*chp)!='X')) { parse_error("bad SR format, expected character 'X'", gs->line_no, linebuf); }
@@ -1843,8 +1837,8 @@ void parse_sr(gerber_state_t *gs, char *linebuf_orig) {
   }
   // end Step Repeat
   //
-  else {
-
+  else
+  {
     if (gs->_parent_gerber_state == NULL) {
       parse_error("found end of SR without beginning", gs->line_no, linebuf);
     }
@@ -1954,8 +1948,8 @@ void parse_d10p(gerber_state_t *gs, char *linebuf) {
 //------------------------
 
 char *parse_single_coord(gerber_state_t *gs, double *val, int fs_int, int fs_real, char *s) {
-  int i, j, k;
-  char *chp, ch, *tbuf;
+  int i, k;
+  char *chp, *tbuf;
   int max_buf, pos=0;
   int real_processed_count=0;
 
@@ -2039,10 +2033,9 @@ char *parse_single_coord(gerber_state_t *gs, double *val, int fs_int, int fs_rea
 
 //------------------------
 
-char *parse_single_int(gerber_state_t *gs, int *val, char *s) {
-  int i, j, k;
+char *parse_single_int(gerber_state_t *gs, int *val, char *s)
+{
   char *chp, ch, *tbuf;;
-  double d;
 
   //if (*s != tok) parse_error("expected token", line_no, NULL);
   s++;
@@ -2080,30 +2073,12 @@ static int _interpolation_center_cmp(const void *a, const void *b)  {
   return 0;
 }
 
-static double _ang_clamp(double a, double eps) {
-  double q_r, q, _a;
-  int iq;
-
-  q_r = a / (2.0*M_PI);
-  iq = (int)q_r;
-  q = (double)iq;
-
-  _a = a;
-  if      (iq > 0) { _a = a - (q*2.0*M_PI); }
-  else if (iq < 0) { _a = a + (q*2.0*M_PI); }
-
-  if      (_a < -(M_PI+eps)) { _a += 2.0*M_PI; }
-  else if (_a >  (M_PI+eps)) { _a -= 2.0*M_PI; }
-
-  return _a;
-}
-
 void segment_update_arc_info(gerber_state_t *gs, gerber_item_ll_t *item_nod,
                              double prev_x, double prev_y,
                              double cur_x, double cur_y,
                              double cur_i, double cur_j) {
   double C = 1000000000000.0;
-  double ta0, ta1, tx, ty, tr;
+  double ta0, ta1, tx, ty;
   double deps;
   double a[4], c[8], del_d[4];
 
@@ -2308,11 +2283,11 @@ void add_flash(gerber_state_t *gs, double cur_x, double cur_y, int aperture_name
 
 //------------------------
 
-void parse_data_block(gerber_state_t *gs, char *linebuf) {
+void parse_data_block(gerber_state_t *gs, char *linebuf)
+{
   char *chp;
   unsigned char state=0;
   double prev_x, prev_y, prev_i, prev_j;
-  int prev_d_state;
 
   gerber_item_ll_t *item_nod;
   gerber_item_ll_t *region_nod;
@@ -2321,7 +2296,6 @@ void parse_data_block(gerber_state_t *gs, char *linebuf) {
   prev_y = gs->cur_y;
   prev_i = gs->cur_i;
   prev_j = gs->cur_j;
-  prev_d_state = gs->d_state;
 
   chp = linebuf;
 
@@ -2487,13 +2461,8 @@ char *parse_d_state(gerber_state_t *gs, char *s) {
 void parse_g01(gerber_state_t *gs, char *linebuf_orig) {
   char *linebuf;
   char *chp;
-  unsigned int state = 0;
 
-  double prev_x, prev_y;
   gerber_item_ll_t *item_nod;
-
-  prev_x = gs->cur_x;
-  prev_y = gs->cur_y;
 
   linebuf = strdup(linebuf_orig);
 
@@ -2538,13 +2507,10 @@ void parse_g01(gerber_state_t *gs, char *linebuf_orig) {
 
 // clockwise circular interpolation
 //
-void parse_g02(gerber_state_t *gs, char *linebuf_orig) {
+void parse_g02(gerber_state_t *gs, char *linebuf_orig)
+{
   gerber_item_ll_t *item_nod;
-  double prev_x, prev_y;
   char *chp, *linebuf;
-
-  prev_x = gs->cur_x;
-  prev_y = gs->cur_y;
 
   linebuf = strdup(linebuf_orig);
 
@@ -2582,13 +2548,10 @@ void parse_g02(gerber_state_t *gs, char *linebuf_orig) {
 
 // counter-clockwise circular interpolation
 //
-void parse_g03(gerber_state_t *gs, char *linebuf_orig) {
+void parse_g03(gerber_state_t *gs, char *linebuf_orig)
+{
   gerber_item_ll_t *item_nod;
-  double prev_x, prev_y;
   char *chp, *linebuf;
-
-  prev_x = gs->cur_x;
-  prev_y = gs->cur_y;
 
   linebuf = strdup(linebuf_orig);
 
@@ -2627,16 +2590,16 @@ void parse_g03(gerber_state_t *gs, char *linebuf_orig) {
 
 // comment (ignore)
 //
-void parse_g04(gerber_state_t *gs, char *linebuf) {
+void parse_g04(gerber_state_t *gs, char *linebuf)
+{
 }
 
 //------------------------
 
 // start region
 //
-void parse_g36(gerber_state_t *gs, char *linebuf) {
-  gerber_item_ll_t *item_nod;
-
+void parse_g36(gerber_state_t *gs, char *linebuf)
+{
   gs->g_state = 36;
   gs->region = 1;
 
@@ -2710,10 +2673,10 @@ void parse_g75(gerber_state_t *gs, char *linebuf) {
 
 //------------------------
 
-void parse_m02(gerber_state_t *gs, char *linebuf) {
+void parse_m02(gerber_state_t *gs, char *linebuf)
+{
   gerber_state_t *gs_root=NULL;
   gerber_item_ll_t *item_nod;
-  int xx=0;
 
   gs->eof = 1;
 
@@ -2844,7 +2807,7 @@ enum {
 } aperture_enum;
 
 void dump_information(gerber_state_t *gs, int level) {
-  int i, j, k, n=0, verbose_print=1;
+  int i, k, n=0, verbose_print=1;
   int cur_contour_list = 0;
 
   aperture_data_t *adb;
@@ -2964,7 +2927,9 @@ void dump_information(gerber_state_t *gs, int level) {
 
 // do any post processing that needs to be done
 //
-int gerber_state_post_process(gerber_state_t *gs) {
+int gerber_state_post_process(gerber_state_t *gs)
+{
+  return 0;
 }
 
 //-------------------------------

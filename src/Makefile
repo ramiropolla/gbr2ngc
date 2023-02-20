@@ -12,36 +12,34 @@ GBR2NGC-OBJS += gbr2ngc_aperture.o
 GBR2NGC-OBJS += gbr2ngc_construct.o
 GBR2NGC-OBJS += gbr2ngc_export.o
 GBR2NGC-OBJS += gbr2ngc_globals.o
-GBR2NGC-OBJS += gbr2ngc_heightmap.o
 GBR2NGC-OBJS += gbr2ngc_profile.o
 GBR2NGC-OBJS += tesexpr.o
 
 TEST-OBJS += $(COMMON-OBJS)
 TEST-OBJS += test_gerber_interpreter.o
 
-CC=gcc
-COPT=-g
-COPT2=-g -DGERBER_TEST
+CCOPT=
+#CCOPT=-O2
 
-#COPT=-O3
-#COPT2=-O3 -DGERBER_TEST
+CC=gcc
+CFLAGS=-g -Wall $(CCOPT)
 
 CXX=g++
-CXXOPT=-g --std=c++11
-#CXXOPT=-O3 --std=c++11
-CXXLIB=-lstdc++ -lboost_thread -lm
+CXXFLAGS=-g --std=c++11 -Wall $(CCOPT)
+
+#LDFLAGS=-lstdc++ -lboost_thread -lm
 
 %.o: %.c
-	$(CC) -o $@ $(COPT) -c $<
+	$(CC) -o $@ $(CFLAGS) -c $<
 
 %.o: %.cpp
-	$(CXX) -o $@ $(CXXOPT) -c $<
+	$(CXX) -o $@ $(CXXFLAGS) -c $<
 
 gbr2ngc: $(GBR2NGC-OBJS)
-	$(CXX) -o $@ $(CXXOPT) $(GBR2NGC-OBJS) $(CXXLIBS)
+	$(CXX) -o $@ $(CXXFLAGS) $(GBR2NGC-OBJS) $(LDFLAGS)
 
 test_gerber_interpreter: $(TEST-OBJS)
-	$(CXX) -o $@ $(CXXOPT) $(TEST-OBJS) $(CXXLIBS)
+	$(CXX) -o $@ $(CXXFLAGS) $(TEST-OBJS) $(LDFLAGS)
 
 .PHONY: clean
 clean:

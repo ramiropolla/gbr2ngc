@@ -100,6 +100,14 @@ struct IntPoint {
     return (a.X < b.X) || ((a.X == b.X) && (a.Y < b.Y));
   }
 
+  void clear(void)
+  {
+    X = 0;
+    Y = 0;
+#ifdef use_xyz
+    Z = 0;
+#endif
+  }
 };
 //------------------------------------------------------------------------------
 

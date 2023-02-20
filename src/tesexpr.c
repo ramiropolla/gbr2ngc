@@ -131,6 +131,7 @@ void tes_free(tes_expr *n) {
 }
 
 
+#if 0
 static double pi() {return 3.14159265358979323846;}
 static double e() {return 2.71828182845904523536;}
 static double fac(double a) {/* simplest version of fac */
@@ -220,6 +221,7 @@ static const tes_variable *find_builtin(const char *name, int len) {
 
     return 0;
 }
+#endif
 
 static const tes_variable *find_lookup(const state *s, const char *name, int len) {
     int iters;

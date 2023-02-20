@@ -195,7 +195,7 @@ typedef struct aperture_data_type {
                   // p[3:4] - inner cutout (same as [2:3] above)
 
   char *macro_name;
-  int macro_param_count;
+  size_t macro_param_count;
   double *macro_param;
 
   int x_rep, y_rep;
@@ -274,7 +274,7 @@ typedef struct am_ll_node_type {
   char *comment;
   char *varname;
   char **eval_line;
-  int n_eval_line;
+  size_t n_eval_line;
   struct am_ll_node_type *next;
 } am_ll_node_t;
 
@@ -392,7 +392,8 @@ typedef struct gerber_item_ll_type {
 
   // SR (step repeat)
   //
-  int sr_x, sr_y;
+  size_t sr_x;
+  size_t sr_y;
   double sr_i, sr_j;
 
   // LS
@@ -445,7 +446,6 @@ void gerber_report_ab_state(gerber_state_t *);
 
 void gerber_state_set_units(gerber_state_t *gs, int units);
 extern int (*function_code_handler[13])(gerber_state_t *, char *);
-int default_function_code_handler(gerber_state_t *gs, char *buf);
 void parse_fs(gerber_state_t *gs, char *linebuf);
 void parse_in(gerber_state_t *gs, char *linebuf);
 void parse_ip(gerber_state_t *gs, char *linebuf);

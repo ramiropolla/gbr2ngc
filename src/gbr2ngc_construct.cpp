@@ -20,46 +20,45 @@
 
 #include "gbr2ngc.hpp"
 
-#define _isnan std::isnan
-
 #define DEBUG_CONSTRUCT
 
-class Gerber_point_2 {
-  public:
-    int64_t ix, iy;
-    double x, y;
-    int64_t jump_pos;
+struct Gerber_point_2
+{
+  int64_t ix;
+  int64_t iy;
+  double x;
+  double y;
+  int64_t jump_pos;
 };
 
-struct Gerber_point_2_cmp {
-
-  bool operator()(const Gerber_point_2 &lhs, const Gerber_point_2 &rhs) const {
-    if (lhs.ix < rhs.ix) return true;
-    if (lhs.ix > rhs.ix) return false;
-    if (lhs.iy < rhs.iy) return true;
+struct Gerber_point_2_cmp
+{
+  bool operator()(const Gerber_point_2 &lhs, const Gerber_point_2 &rhs) const
+  {
+    if ( lhs.ix < rhs.ix )
+      return true;
+    if ( lhs.ix > rhs.ix )
+      return false;
+    if ( lhs.iy < rhs.iy )
+      return true;
     return false;
   }
-
 };
-
-typedef std::map< Gerber_point_2, int, Gerber_point_2_cmp  > PointPosMap;
-typedef std::pair< Gerber_point_2, int > PointPosMapPair;
 
 typedef std::map< Gerber_point_2, int , Gerber_point_2_cmp  > HolePosMap;
 
 //--
 
-static int _get_segment_count(double r, double min_segment_length, int min_segments) {
-  double c, z;
-
-  c = 2.0 * M_PI * r;
-
-  z = c / min_segment_length;
-  if (_isnan(z)) { return min_segments; }
-  if ((int)z < min_segments) {
+static int _get_segment_count(double r, double min_segment_length, int min_segments)
+{
+  double c = 2.0 * M_PI * r;
+  double z = c / min_segment_length;
+  if ( std::isnan(z) )
     return min_segments;
-  }
-  return (int)z;
+  int floor_z = z;
+  if ( floor_z < min_segments )
+    return min_segments;
+  return floor_z;
 }
 
 
@@ -86,10 +85,11 @@ static int _get_segment_count(double r, double min_segment_length, int min_segme
 // start and end hold the positions the starting 'a' and ending 'a'
 // point in the p vector.
 //
-void add_hole( Paths &hole_vec,
-               std::vector< Gerber_point_2 > &p,
-               int start,
-               int n ) {
+static void add_hole( Paths &hole_vec,
+                      std::vector< Gerber_point_2 > &p,
+                      int start,
+                      int n )
+{
   int i, ds, jp, end;
   Path hole_polygon;
 
@@ -97,7 +97,8 @@ void add_hole( Paths &hole_vec,
 
   jp = p[start].jump_pos;
 
-  if (jp<0) {
+  if (jp < 0)
+  {
     fprintf(stderr, "ERROR: jump pos MUST be > 0, is %i, exiting (start %i, n %i)\n", jp, start, n );
     printf("ERROR: jump pos MUST be > 0, is %i, exiting (start %i, n %i)\n", jp, start, n );
     exit(2);
@@ -125,15 +126,14 @@ void add_hole( Paths &hole_vec,
 
   if (hole_polygon.size() > 2)
     hole_vec.push_back( hole_polygon );
-
 }
 
 // Copy linked list points in contour to vector p, removing contiguougs
 // duplicates.
-//
 void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
                                                 std::vector< Gerber_point_2 > &p,
-                                                gerber_item_ll_t *contour) {
+                                                gerber_item_ll_t *contour)
+{
   bool first = true;
   int n_seg=16, n;
   double C = 1000000000000.0;
@@ -161,8 +161,8 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       default: break;
     }
 
-    if (contour->type == GERBER_REGION_SEGMENT) {
-
+    if (contour->type == GERBER_REGION_SEGMENT)
+    {
       dpnt.ix = (int64_t)(contour->x * C);
       dpnt.iy = (int64_t)(contour->y * C);
 
@@ -179,8 +179,8 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       prev_pnt = dpnt;
       first = false;
     }
-    else if (contour->type == GERBER_REGION_SEGMENT_ARC) {
-
+    else if (contour->type == GERBER_REGION_SEGMENT_ARC)
+    {
       n_seg = _get_segment_count(contour->arc_r, gMinSegmentLength, gMinSegment);
 
       for (_segment=1; _segment<n_seg; _segment++) {
@@ -211,8 +211,8 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
         first = false;
       }
     }
-    else if (contour->type == GERBER_REGION_MOVE) {
-
+    else if (contour->type == GERBER_REGION_MOVE)
+    {
       dpnt.ix = (int64_t)(contour->x * C);
       dpnt.iy = (int64_t)(contour->y * C);
 
@@ -226,43 +226,35 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       prev_pnt = dpnt;
       first = false;
     }
-    else {
+    else
+    {
       fprintf(stderr, "WARNING: populate_gerber_point_vector_from_contour found unknown type %i\n", contour->type);
     }
-
   }
-
 }
 
 
 // Create the start and end positions of the holes in the vector p.
 // Store in hole_map.
-//
-int gerber_point_2_decorate_with_jump_pos( std::vector< Gerber_point_2 > &p ) {
-  unsigned int i;
-  int k;
+static int gerber_point_2_decorate_with_jump_pos( std::vector< Gerber_point_2 > &p )
+{
   HolePosMap hole_map;
-
-  for (i=0; i<p.size(); i++) {
+  for ( size_t i = 0; i < p.size(); i++ )
+  {
     p[i].jump_pos = -1;
-
-    // if found in p_map, add it to our map
-    //
-    if ( hole_map.find( p[i] ) != hole_map.end() ) {
-      k = hole_map[ p[i] ];
+    if ( hole_map.find( p[i] ) != hole_map.end() )
+    {
+      // if found in p_map, add it to our map
+      int k = hole_map[ p[i] ];
       p[ k ].jump_pos = i;
-
       hole_map[ p[i] ] = i;
     }
-
-    // otherwise add it
-    //
-    else {
+    else
+    {
+      // otherwise add it
       hole_map[ p[i] ] = i;
     }
-
   }
-
   return 0;
 }
 
@@ -275,9 +267,8 @@ int gerber_point_2_decorate_with_jump_pos( std::vector< Gerber_point_2 > &p ) {
 // contour.
 // Construct the point vector and hole map.  Create the polygon with holes
 // vector.
-//
-//int construct_contour_region( PathSet &pwh_vec, gerber_region_t *contour ) {
-int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_ll_t *contour ) {
+int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_ll_t *contour )
+{
   int i, ds;
 
   std::vector< Gerber_point_2 > p;
@@ -288,31 +279,29 @@ int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_
   Clipper clip;
 
   // Initially populate p vector
-  //
   populate_gerber_point_vector_from_contour( gs, p, contour );
 
   // Find the start and end regions for each of the
   // holes.
-  //
   gerber_point_2_decorate_with_jump_pos( p );
 
   if (p.size()==0) { return -1; }
 
   int n = p.size();
-  for (i=0; i<n; i++) {
-
+  for ( i = 0; i < n; i++ )
+  {
     path.push_back( dtoc( p[i].x, p[i].y ) );
-    if (p[i].jump_pos < 0) { continue; }
+    if ( p[i].jump_pos < 0 )
+      continue;
 
     // Special case when the boundary end ties back to the beginning
     // without any jumps to holes.
-    //
-    if (p[i].jump_pos == (n-1)) { continue; }
+    if ( p[i].jump_pos == (n-1) )
+      continue;
 
     ds = p[i].jump_pos - (i+1);
     add_hole( pwh, p, i+1, ds );
     i += ds;
-
   }
   pwh.push_back(path);
 
@@ -331,23 +320,22 @@ int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_
 
 //-----------------------------------------
 
-bool isccw( Path &p ) {
-  unsigned int i;
-  cInt dx, dy, s = 0;
-
-  for (i=1; i<p.size(); i++) {
-    dx = p[i].X - p[0].X;
-    dy = p[i].Y - p[0].Y;
+bool isccw( Path &p )
+{
+  cInt s = 0;
+  for ( size_t i = 1; i < p.size(); i++ )
+  {
+    cInt dx = p[i].X - p[0].X;
+    cInt dy = p[i].Y - p[0].Y;
     s += dx*dy;
   }
-
-  if (s < 0) return true;
-  return false;
+  return s < 0;
 }
 
 //--
 
-static void _construct_transform_matrix(double *M, int mirror_axis, double rot_deg, double scale, double tx, double ty) {
+static void _construct_transform_matrix(double *M, int mirror_axis, double rot_deg, double scale, double tx, double ty)
+{
   double c = cos(rot_deg * M_PI / 180.0);
   double s = sin(rot_deg * M_PI / 180.0);
 
@@ -370,15 +358,18 @@ static void _construct_transform_matrix(double *M, int mirror_axis, double rot_d
   M[0*3 + 2] = tx;
   M[1*3 + 2] = ty;
 
-  if (mirror_axis == MIRROR_AXIS_X) {
+  if ( mirror_axis == MIRROR_AXIS_X )
+  {
     M[0*3 + 0] *= -1.0;
     M[1*3 + 0] *= -1.0;
   }
-  else if (mirror_axis == MIRROR_AXIS_Y) {
+  else if ( mirror_axis == MIRROR_AXIS_Y )
+  {
     M[0*3 + 1] *= -1.0;
     M[1*3 + 1] *= -1.0;
   }
-  else if (mirror_axis == MIRROR_AXIS_XY) {
+  else if ( mirror_axis == MIRROR_AXIS_XY )
+  {
     M[0*3 + 0] *= -1.0;
     M[0*3 + 1] *= -1.0;
     M[1*3 + 0] *= -1.0;
@@ -388,21 +379,23 @@ static void _construct_transform_matrix(double *M, int mirror_axis, double rot_d
   return;
 }
 
-static void _mulmat3x3(double *result, const double *A, const double *B) {
+static void _mulmat3x3(double *result, const double *A, const double *B)
+{
   double tm[3*3];
   memset(tm, 0, sizeof(double)*3*3);
-  for (int r=0; r<3; r++)
-    for (int c=0; c<3; c++)
-      for (int k=0;  k<3; k++)
+  for ( size_t r = 0; r < 3; r++ )
+    for ( size_t c = 0; c < 3; c++ )
+      for ( size_t k = 0; k < 3; k++ )
         tm[3*r + c] += A[3*r + k] * B[3*k + c];
   memcpy(result, tm, sizeof(double)*3*3);
 }
 
-static void _mulvec3(double *result, const double *M, const double *v) {
+static void _mulvec3(double *result, const double *M, const double *v)
+{
   double tv[3];
   memset(tv, 0, sizeof(double)*3);
-  for (int r=0; r<3; r++)
-    for (int k=0; k<3; k++)
+  for ( size_t r = 0; r < 3; r++ )
+    for ( size_t k = 0; k < 3; k++ )
       tv[r] += M[3*r + k] * v[k];
   memcpy(result, tv, sizeof(double)*3);
 }
@@ -425,7 +418,9 @@ static void _mulvec3(double *result, const double *M, const double *v) {
 //   global parameter values
 //
 //
-int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double *transformMatrixParent, int level) {
+static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip, const double *transformMatrixParent)
+{
+  Paths &result = *_result;
   unsigned int i, ii;
 
   gerber_item_ll_t *item_nod;
@@ -434,7 +429,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
   PathSet temp_pwh_vec;
   IntPoint prev_pnt, cur_pnt, _origin;
 
-  int name=0;
+  int name = 0;
   int polarity = 1, d_name = -1;
   int pmrs_active = 0;
 
@@ -445,9 +440,6 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
 
   double dx, dy;
 
-  IntPoint _pnt0, _pnt1, _pnt;
-
-  IntPoint _prv_arc_pnt;
   double ang_rad, tx, ty, tr, _p;
   int n_seg = 16;
 
@@ -551,7 +543,6 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
     // hull of the basic geometry type.
     //
     else if (item_nod->type == GERBER_SEGMENT) {
-
       name = d_name;
 
       region = item_nod->region_head;
@@ -635,8 +626,6 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
     //--
 
     else if (item_nod->type == GERBER_SEGMENT_ARC) {
-
-
       name = d_name;
 
       n_seg = _get_segment_count(item_nod->arc_r, gMinSegmentLength, gMinSegment);
@@ -729,10 +718,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
         if (_clip_update) {
           clip.Execute( ctUnion, result, pftNonZero, pftNonZero );
         }
-
-        _prv_arc_pnt = cur_pnt;
       }
-
     }
 
     //--
@@ -743,10 +729,9 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
       cur_pnt = dtoc( item_nod->x, item_nod->y );
 
       // Simple aperture
-      //
-      if ( gAperture.find(name) != gAperture.end() ) {
-
-        _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, item_nod->x, item_nod->y );
+      if ( gAperture.find(name) != gAperture.end() )
+      {
+        _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, item_nod->x, item_nod->y);
         _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
 
         aperture_clip.Clear();
@@ -754,7 +739,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
         for (ii=0; ii<gAperture[ name ].m_path.size(); ii++) {
 
           tmp_path.clear();
-          for (size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++)
+          for ( size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++ )
           {
             dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
             dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
@@ -825,7 +810,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
         _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, item_nod->x, item_nod->y);
         _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
 
-        join_polygon_set_r( result, clip, stack_gs, transformMatrix, level+1 );
+        join_polygon_set_r( stack_gs, _result, clip, transformMatrix );
 
         // AB calls do not alter state but by convention, we alter state in the `gerber_state_t` structure,
         // so restore state after we're done with the aperture block realization
@@ -852,7 +837,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
 
     else if (item_nod->type == GERBER_SR) {
 
-      for (size_t jj = 0; jj < item_nod->sr_y; jj++)
+      for ( size_t jj = 0; jj < item_nod->sr_y; jj++ )
       {
         for (ii=0; ii<item_nod->sr_x; ii++) {
 
@@ -873,7 +858,7 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
           item_nod->step_repeat->rotation_degree  = gs->rotation_degree;
           item_nod->step_repeat->scale            = gs->scale;
 
-          join_polygon_set_r(result, clip, item_nod->step_repeat, transformMatrix, level+1);
+          join_polygon_set_r(item_nod->step_repeat, _result, clip, transformMatrix);
 
           // SR affects state, so percolate state changes up
           //
@@ -898,16 +883,79 @@ int join_polygon_set_r(Paths &result, Clipper &clip, gerber_state_t *gs, double 
   return 0;
 }
 
-int join_polygon_set(Paths &result, gerber_state_t *gs) {
+static const double identMatrix[3*3] = {
+  1.0, 0.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 0.0, 1.0,
+};
+
+int join_polygon_set(gerber_state_t *gs, Paths *_result)
+{
   Clipper clip;
-
-  double ident[3*3];
-
-  memset(ident, 0, sizeof(double)*3*3);
-  ident[0] = 1.0;
-  ident[4] = 1.0;
-  ident[8] = 1.0;
-
-  return join_polygon_set_r(result, clip, gs, ident, 0);
+  return join_polygon_set_r(gs, _result, clip, identMatrix);
 }
 
+static int join_drill_set_r(gerber_state_t *gs, Paths *_result, const double *transformMatrixParent)
+{
+  Paths &result = *_result;
+
+  Path tmp_path;
+
+  double transformMatrix[3*3];
+  double dpnt[3] = { 0.0, 0.0, 0.0 };
+
+  for ( gerber_item_ll_t *item_nod = gs->item_head; item_nod; item_nod = item_nod->next )
+  {
+    if (item_nod->type == GERBER_LP) {
+      gs->polarity = item_nod->polarity;
+    } else if (item_nod->type == GERBER_LM) {
+      gs->mirror_axis = item_nod->mirror_axis;
+    } else if (item_nod->type == GERBER_LR) {
+      gs->rotation_degree = item_nod->rotation_degree;
+    } else if (item_nod->type == GERBER_LS) {
+      gs->scale = item_nod->scale;
+    } else if (item_nod->type == GERBER_D10P) {
+      gs->d_state = item_nod->d_name;
+    } else if (item_nod->type == GERBER_FLASH) {
+      ApertureNameMap::const_iterator iter = gAperture.find(gs->d_state);
+      if ( iter == gAperture.end() )
+      {
+        fprintf(stdout, "## ERROR, aperture name %d not found\n", gs->d_state);
+        fflush(stdout);
+        continue;
+      }
+
+      _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, item_nod->x, item_nod->y);
+      _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
+
+      const Aperture_realization &aprel = iter->second;
+      for (const Path &path : aprel.m_path)
+      {
+        tmp_path.clear();
+        for (const IntPoint &pt : path)
+        {
+          dpnt[0] = ctod(pt.X);
+          dpnt[1] = ctod(pt.Y);
+          dpnt[2] = 1.0;
+          _mulvec3(dpnt, transformMatrix, dpnt);
+          tmp_path.push_back( dtoc( dpnt[0], dpnt[1] ) );
+        }
+        result.push_back(tmp_path);
+      }
+    } else if (item_nod->type == GERBER_REGION
+            || item_nod->type == GERBER_SEGMENT
+            || item_nod->type == GERBER_SEGMENT_ARC
+            || item_nod->type == GERBER_SR)
+    {
+      fprintf(stdout, "## ERROR, item_nod->type %s\n", g_gerber_enum_item_str[item_nod->type]);
+      fflush(stdout);
+    }
+  }
+
+  return 0;
+}
+
+int join_drill_set(gerber_state_t *gs, Paths *_result)
+{
+  return join_drill_set_r(gs, _result, identMatrix);
+}

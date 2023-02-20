@@ -33,19 +33,28 @@ char *gGCodeHeader = NULL;
 char *gGCodeFooter = NULL;
 
 int gFeedRate = 10;
-int gFeedRateSet = 0;
+bool gFeedRateSet = false;
 int gSeekRate = 100;
-int gSeekRateSet = 0;
+bool gSeekRateSet = false;
+int gCurRate;
+int gSpindleSpeed = 1000;
+bool gSpindleSpeedSet = false;
 
 bool gShowComments = true;
+bool gUppercase = false;
 bool gHumanReadable = true;
+
+char char_F = 'f';
+char char_G = 'g';
+char char_M = 'm';
+char char_P = 'p';
+char char_S = 's';
 
 int gScanLineVertical = 0;
 int gScanLineHorizontal = 0;
 int gScanLineZenGarden = 0;
 
 double gZSafe = 0.1;
-double gZZero = 0.0;
 double gZCut = -0.05;
 
 FILE *gOutStream = stdout;
@@ -56,32 +65,22 @@ double eps = 0.000001;
 double gRadius = 0.0;
 double gFillRadius = -1.0;
 
+bool gFindExtremes = false;
+int64_t gOffsetX = 0;
+int64_t gOffsetY = 0;
+double gScaleX = 1.0;
+double gScaleY = 1.0;
+
 int gInvertFlag = 0;
 int gSimpleInfill = 0;
 int gDrawOutline = 1;
+bool gDrill = false;
 
 int gMinSegment = 8;
-//double gMinSegmentLengthInch = 0.001;
-//double gMinSegmentLengthMM = 0.01;
 double gMinSegmentLengthInch = 0.004;
 double gMinSegmentLengthMM = 0.1;
 double gMinSegmentLength = -1.0;
 
-int gHeightOffset = 0;
-std::string gHeightFileName;
-std::string gHeightAlgorithm;
-
-HeightMap gHeightMap;
-
-/*
-Polygon_set_2 gPolygonSet;
-Offset_polygon_set_2 gOffsetPolygonSet;
-std::vector< Offset_polygon_with_holes_2 > gOffsetPolygonVector;
-
-Pwh_vector_2 gerber_list;
-*/
-
-std::vector<int> gApertureName;
 ApertureNameMap gAperture;
 
 ApertureBlockMap gApertureBlock;
@@ -91,13 +90,11 @@ struct timeval gProfileEnd;
 
 // local_exposure - { 1 - add, 0 - remove }
 // global_exposure - { 1 - additive, 0 - subtractive}
-//
-//int _expose_bit(int local_exposure, int global_exposure = 1) {
-int _expose_bit(int local_exposure, int global_exposure) {
+int _expose_bit(int local_exposure, int global_exposure)
+{
   int gbit=0;
   local_exposure  = ( (local_exposure  > 0) ? 1 : 0);
   gbit = ( (global_exposure > 0) ? 0 : 1);
-
   return local_exposure ^ gbit;
 }
 

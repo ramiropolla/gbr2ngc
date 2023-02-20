@@ -26,11 +26,10 @@
 
 //------------
 
-static int _get_segment_count(double r, double min_segment_length, int min_segments) {
-  int segments;
-  double c, theta, z;
+static int _get_segment_count(double r, double min_segment_length, int min_segments)
+{
+  double c, z;
 
-  segments=min_segments;
   c = 2.0 * M_PI * r;
 
   z = c / min_segment_length;
@@ -43,14 +42,25 @@ static int _get_segment_count(double r, double min_segment_length, int min_segme
 
 //------------
 
-void realize_circle( gerber_state_t *gs,
-                     Aperture_realization &ap,
-                     double r,
-                     int min_segments = 8,
-                     double min_segment_length = 0.01 ) {
+static void realize_circle( gerber_state_t *gs,
+                            Aperture_realization &ap,
+                            double r,
+                            int min_segments = 8,
+                            double min_segment_length = 0.01 )
+{
   int i, idx, segments;
   double a;
   Path empty_path;
+
+  if (gDrill) {
+    idx = (int)ap.m_path.size();
+    ap.m_path.push_back(empty_path);
+    ap.m_path[idx].push_back( dtoc( 0, 0 ) );
+    ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
+    ap.m_hole_d = 2*r;
+    fprintf(stderr, "WARNING: realize_circle %f\n", ap.m_hole_d);
+    return;
+  }
 
   segments = _get_segment_count(r, min_segment_length, min_segments);
 
@@ -67,10 +77,11 @@ void realize_circle( gerber_state_t *gs,
   ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
 }
 
-void realize_rectangle( gerber_state_t *gs,
-                        Aperture_realization &ap,
-                        double x,
-                        double y ) {
+static void realize_rectangle( gerber_state_t *gs,
+                               Aperture_realization &ap,
+                               double x,
+                               double y )
+{
   int idx;
   Path empty_path;
 
@@ -87,15 +98,39 @@ void realize_rectangle( gerber_state_t *gs,
 }
 
 
-void realize_obround( gerber_state_t *gs,
-                      Aperture_realization &ap,
-                      double x_len,
-                      double y_len,
-                      int min_segments = 8,
-                      double min_segment_length = 0.01 ) {
+static void realize_obround( gerber_state_t *gs,
+                             Aperture_realization &ap,
+                             double x_len,
+                             double y_len,
+                             int min_segments = 8,
+                             double min_segment_length = 0.01 )
+{
   int i, segments, idx;
   double r, a;
   Path empty_path;
+
+  if (gDrill) {
+    double x_len_abs = (x_len > 0) ? x_len : -x_len;
+    double y_len_abs = (y_len > 0) ? y_len : -y_len;
+    double x_len_sign = (x_len > 0) ? 1. : -1.;
+    double y_len_sign = (y_len > 0) ? 1. : -1.;
+    if (x_len_abs < y_len_abs) {
+      r = x_len;
+    } else {
+      r = y_len;
+    }
+    x_len_abs -= r;
+    y_len_abs -= r;
+
+    idx = (int)ap.m_path.size();
+    ap.m_path.push_back(empty_path);
+    ap.m_path[idx].push_back( dtoc( 0, 0 ) );
+    ap.m_path[idx].push_back( dtoc( x_len_abs * x_len_sign, y_len_abs * y_len_sign ) );
+    ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
+    ap.m_hole_d = r;
+    fprintf(stderr, "WARNING: realize_obround %f\n", ap.m_hole_d);
+    return;
+  }
 
   r = ( (fabs(x_len) < fabs(y_len)) ? x_len : y_len );
 
@@ -108,14 +143,12 @@ void realize_obround( gerber_state_t *gs,
     r = x_len / 2.0;
 
     // start at the top right
-    //
     for (i=0; i <= (segments/2); i++) {
       a = 2.0 * M_PI * (double)i / (double)segments ;
       ap.m_path[idx].push_back( dtoc( r*cos(a), r*sin(a) + ((y_len/2.0) - r) ) );
     }
 
     // then the bottom
-    //
     for (int i = (segments/2); i <= segments; i++) {
       a = 2.0 * M_PI * (double)i / (double)segments ;
       ap.m_path[idx].push_back( dtoc( r*cos(a), r*sin(a) - ((y_len/2.0) - r) ) );
@@ -127,23 +160,19 @@ void realize_obround( gerber_state_t *gs,
     r = y_len / 2.0;
 
     // start at bottom right
-    //
     for (i=0; i <= (segments/2); i++) {
       a = ( 2.0 * M_PI * (double)i / (double)segments ) - ( M_PI / 2.0 );
       ap.m_path[idx].push_back( dtoc( r*cos(a) + ((x_len/2.0) - r) , r*sin(a) ) );
     }
 
     // then the left
-    //
     for (i=(segments/2); i <= segments; i++) {
       a = ( 2.0 * M_PI * (double)i / (double)segments ) - ( M_PI / 2.0 );
       ap.m_path[idx].push_back( dtoc( r*cos(a) - ((x_len/2.0) - r) , r*sin(a) ) );
     }
-
   }
 
   // circle
-  //
   else {
 
     r = x_len / 2.0;
@@ -160,11 +189,12 @@ void realize_obround( gerber_state_t *gs,
   ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
 }
 
-void realize_polygon( gerber_state_t *gs,
-                      Aperture_realization &ap,
-                      double r,
-                      int n_vert,
-                      double rot_deg ) {
+static void realize_polygon( gerber_state_t *gs,
+                             Aperture_realization &ap,
+                             double r,
+                             int n_vert,
+                             double rot_deg )
+{
   int i, idx;
   double a;
   Path empty_path;
@@ -187,11 +217,12 @@ void realize_polygon( gerber_state_t *gs,
   ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
 }
 
-void realize_hole( gerber_state_t *gs,
-                   Aperture_realization &ap,
-                   double r,
-                   int min_segments = 8,
-                   double min_segment_length = 0.01 ) {
+static void realize_hole( gerber_state_t *gs,
+                          Aperture_realization &ap,
+                          double r,
+                          int min_segments = 8,
+                          double min_segment_length = 0.01 )
+{
   int i, idx, segments;
   double a;
   Path empty_path;
@@ -203,7 +234,6 @@ void realize_hole( gerber_state_t *gs,
   for (i=0; i<segments; i++) {
 
     // counter clockwise
-    //
     a = -2.0 * M_PI * (double)i / (double)segments;
     ap.m_path[idx].push_back( dtoc( r*cos( a ), r*sin( a ) ) );
 
@@ -216,22 +246,19 @@ void realize_hole( gerber_state_t *gs,
   ap.m_exposure.push_back( _expose_bit(0, gs->polarity) );
 }
 
-
-/*
-void realize_rectangle_hole( Aperture_realization &ap, double x, double y ) {
-
-  // clockwise instead of contouer clockwise
-  //
+#if 0
+static void realize_rectangle_hole( Aperture_realization &ap, double x, double y )
+{
+  // clockwise instead of counter clockwise
   ap.m_hole.push_back( dtoc( -x, -y ) );
   ap.m_hole.push_back( dtoc( -x,  y ) );
   ap.m_hole.push_back( dtoc(  x,  y ) );
   ap.m_hole.push_back( dtoc(  x, -y ) );
-
 }
-*/
+#endif
 
-
-am_ll_node_t *aperture_macro_lookup(am_ll_lib_t *am_lib_nod, const char *am_name) {
+static am_ll_node_t *aperture_macro_lookup(am_ll_lib_t *am_lib_nod, const char *am_name)
+{
   while (am_lib_nod) {
     if ((am_lib_nod->am) &&
         (am_lib_nod->am->name) &&
@@ -250,12 +277,11 @@ am_ll_node_t *aperture_macro_lookup(am_ll_lib_t *am_lib_nod, const char *am_name
 // eval_param are the resuling variables
 //
 // return 0 on success, non-zero on error
-//
-int _eval_var( std::vector< double > &eval_param,
-               char **eval_line,
-               int n_eval_line,
-               std::vector< double > &macro_param ) {
-  int i, err=0;
+static int _eval_var( std::vector< double > &eval_param,
+                      char **eval_line,
+                      size_t n_eval_line,
+                      std::vector< double > &macro_param ) {
+  int err=0;
   tes_expr *expr=NULL;
   tes_variable *vars=NULL;
   std::vector< std::string > varname;
@@ -264,7 +290,7 @@ int _eval_var( std::vector< double > &eval_param,
 
   if (macro_param.size() > 0) {
     vars = (tes_variable *)malloc(sizeof(tes_variable)*macro_param.size());
-    for (i=0; i<macro_param.size(); i++) {
+    for (size_t i=0; i<macro_param.size(); i++) {
       s.clear();
       s += "$";
       s += std::to_string(i+1);
@@ -275,13 +301,12 @@ int _eval_var( std::vector< double > &eval_param,
 
     // varname is dynamically allocated, so we need to set the
     // string points here, after varname's size becomes static
-    //
-    for (i=0; i<macro_param.size(); i++) {
+    for (size_t i=0; i<macro_param.size(); i++) {
       vars[i].name = varname[i].c_str();
     }
   }
 
-  for (i=0; i<n_eval_line; i++) {
+  for (size_t i=0; i<n_eval_line; i++) {
     expr = tes_compile(eval_line[i], vars, macro_param.size(), &err);
     if (!expr) { if(vars) { free(vars); } return -1; }
     val = tes_eval(expr);
@@ -294,9 +319,10 @@ int _eval_var( std::vector< double > &eval_param,
 }
 
 
-int eval_AM_var( am_ll_node_t *am_node,
-                 std::vector< double > &macro_param ) {
-  int i, j, k, err=0;
+static int eval_AM_var( am_ll_node_t *am_node,
+                        std::vector< double > &macro_param )
+{
+  int i, err=0;
   tes_expr *expr=NULL;
   tes_variable *vars=NULL;
   std::vector< std::string > varname;
@@ -343,11 +369,12 @@ int eval_AM_var( am_ll_node_t *am_node,
   return 0;
 }
 
-int add_AM_circle( am_ll_node_t *am_node,
-                   std::vector< double > &macro_param,
-                   Paths &paths,
-                   std::vector< int > &exposure ) {
-  int i, j, k, err=0;
+static int add_AM_circle( am_ll_node_t *am_node,
+                          std::vector< double > &macro_param,
+                          Paths &paths,
+                          std::vector< int > &exposure )
+{
+  int i, err=0;
 
   std::vector< double > eval_param;
 
@@ -357,8 +384,6 @@ int add_AM_circle( am_ll_node_t *am_node,
   int expose = 0;
   double px, py, c_a, s_a;
   double r=0.0, cx=0.0, cy=0.0, ang=0.0, ang_deg_ccw=0.0;
-
-  double *dptr=NULL;
 
   err = _eval_var(eval_param, am_node->eval_line, am_node->n_eval_line, macro_param);
   if (err<0) { return err; }
@@ -394,22 +419,23 @@ int add_AM_circle( am_ll_node_t *am_node,
   return 0;
 }
 
-int add_AM_vector_line( am_ll_node_t *am_node,
-                        std::vector< double > &macro_param,
-                        Paths &paths,
-                        std::vector< int > &exposure ) {
-  int i, j, k, err=0;
+static int add_AM_vector_line( am_ll_node_t *am_node,
+                               std::vector< double > &macro_param,
+                               Paths &paths,
+                               std::vector< int > &exposure )
+{
+  int err=0;
 
   Path path;
 
   std::vector< double > eval_param;
 
-  int segments = 8, expose = 0;
+  int expose = 0;
   double px, py, c_a, s_a;
   double width=0.0, ang=0.0, ang_deg_ccw=0.0;
   double sx=0.0, sy=0.0, ex=0.0, ey=0.0;
   double vang = 0.0, c_va=0.0, s_va=0.0;
-  double dwl=0.0, dwx0=0.0, dwy0=0.0, dwx1=0.0, dwy1=0.0;
+  double dwx0=0.0, dwy0=0.0, dwx1=0.0, dwy1=0.0;
 
   err = _eval_var(eval_param, am_node->eval_line, am_node->n_eval_line, macro_param);
   if (err!=0) { return err; }
@@ -460,18 +486,19 @@ int add_AM_vector_line( am_ll_node_t *am_node,
   return 0;
 }
 
-int add_AM_center_line( am_ll_node_t *am_node,
-                        std::vector< double > &macro_param,
-                        Paths &paths,
-                        std::vector< int > &exposure ) {
-  int i, j, k, err=0;
+static int add_AM_center_line( am_ll_node_t *am_node,
+                               std::vector< double > &macro_param,
+                               Paths &paths,
+                               std::vector< int > &exposure )
+{
+  int err=0;
 
   Path path;
 
   std::vector< double > eval_param;
 
-  int segments = 8, expose = 0;
-  double a, px, py, c_a, s_a;
+  int expose = 0;
+  double px, py, c_a, s_a;
   double width=0.0, height=0.0, cx=0.0, cy=0.0, ang=0.0, ang_deg_ccw=0.0;
 
 
@@ -511,17 +538,18 @@ int add_AM_center_line( am_ll_node_t *am_node,
   return 0;
 }
 
-int add_AM_polygon( am_ll_node_t *am_node,
-                    std::vector< double > &macro_param,
-                    Paths &paths,
-                    std::vector< int > &exposure ) {
-  int i, j, k, err=0;
+static int add_AM_polygon( am_ll_node_t *am_node,
+                           std::vector< double > &macro_param,
+                           Paths &paths,
+                           std::vector< int > &exposure )
+{
+  int i, err=0;
 
   Path path;
 
   std::vector< double > eval_param;
 
-  int segments = 0, expose = 0;
+  int expose = 0;
   int nvert =3;
   double a, diam, r;
   double cx=0.0, cy=0.0, ang_deg_ccw=0.0, ang=0.0;
@@ -562,12 +590,12 @@ int add_AM_polygon( am_ll_node_t *am_node,
   return 0;
 }
 
-void _line_path( Path &path,
-                 double cx,
-                 double cy,
-                 double width,
-                 double height,
-                 double ang ) {
+static void _line_path( Path &path,
+                        double cx,
+                        double cy,
+                        double width,
+                        double height,
+                        double ang ) {
   double c_a, s_a;
   double w2, h2;
 
@@ -586,12 +614,12 @@ void _line_path( Path &path,
   path.push_back( path[0] );
 }
 
-int add_AM_moire( am_ll_node_t *am_node,
-                  std::vector< double > &macro_param,
-                  Paths &paths,
-                  std::vector< int > &exposure ) {
-  int i, j, k, err=0;
-  int ii, jj;
+static int add_AM_moire( am_ll_node_t *am_node,
+                         std::vector< double > &macro_param,
+                         Paths &paths,
+                         std::vector< int > &exposure )
+{
+  int err=0;
 
   Path _path;
   Paths _paths, _tmp_paths;
@@ -599,7 +627,8 @@ int add_AM_moire( am_ll_node_t *am_node,
 
   std::vector< double > eval_param;
 
-  int segments = 32, expose = 1;
+  size_t segments = 32;
+  int expose = 1;
   double a, r;
   double cx=0.0, cy=0.0, ang_deg_ccw=0.0, ang=0.0;
   double px=0.0, py=0.0;
@@ -635,14 +664,16 @@ int add_AM_moire( am_ll_node_t *am_node,
 
   r = outer_diam/2.0;
 
-  for (ii=0; ii<max_ring; ii++) {
-
-    if (r <= 0.0) { break; }
+  for (size_t ii = 0; ii < (size_t) max_ring; ii++)
+  {
+    if (r <= 0.0)
+      break;
 
     clip.Clear();
 
     _path.clear();
-    for (jj=0; jj<segments; jj++) {
+    for (size_t jj = 0; jj < segments; jj++)
+    {
       a = (double)jj * M_PI * 2.0 / (double)segments;
 
       px = r * cos(a);
@@ -659,8 +690,8 @@ int add_AM_moire( am_ll_node_t *am_node,
     if (r <= 0.0) { break; }
 
     _path.clear();
-    for (jj=0; jj<segments; jj++) {
-
+    for (size_t jj = 0; jj < segments; jj++)
+    {
       a = -(double)jj * M_PI * 2.0 / (double)segments;
 
       px = r * cos(a);
@@ -674,9 +705,8 @@ int add_AM_moire( am_ll_node_t *am_node,
 
     _tmp_paths.clear();
     clip.Execute( ctDifference, _tmp_paths, pftNonZero, pftNonZero );
-    for (jj=0; jj<_tmp_paths.size(); jj++) {
+    for (size_t jj = 0; jj < _tmp_paths.size(); jj++)
       _paths.push_back(_tmp_paths[jj]);
-    }
 
     r -= ring_gap;
   }
@@ -700,7 +730,8 @@ int add_AM_moire( am_ll_node_t *am_node,
 
   clip.Execute( ctUnion, paths, pftNonZero, pftNonZero);
 
-  for (ii=0; ii<paths.size(); ii++) {
+  for (size_t ii = 0; ii < paths.size(); ii++)
+  {
     n = paths[ii].size();
     if (n<2) { continue; }
     if ((paths[ii][0].X != paths[ii][n-1].X) ||
@@ -709,39 +740,23 @@ int add_AM_moire( am_ll_node_t *am_node,
     }
   }
 
-  /*
-  //DEBUG
-  for (ii=0; ii<paths.size(); ii++) {
-    n = paths[ii].size();
-    if (n<2) { printf("( paths[%i] < 2 )\n", ii); continue; }
-    if ( (paths[ii][0].X != paths[ii][n-1].X) ||
-         (paths[ii][0].Y != paths[ii][n-1].Y) ) {
-      printf("( paths[%i][0] != paths[%i][%i]  ;%lli,%lli != %lli,%lli; )\n",
-          ii, ii, n-1,
-          (long long int)paths[ii][0].X,
-          (long long int)paths[ii][0].Y,
-          (long long int)paths[ii][n-1].X,
-          (long long int)paths[ii][n-1].Y);
-    }
-  }
-  */
-
   return 0;
 }
 
-int add_AM_outline( am_ll_node_t *am_node,
-                    std::vector< double > &macro_param,
-                    Paths &paths,
-                    std::vector< int > &exposure ) {
-  int i, j, k, err=0;
+static int add_AM_outline( am_ll_node_t *am_node,
+                           std::vector< double > &macro_param,
+                           Paths &paths,
+                           std::vector< int > &exposure )
+{
+  int err=0;
 
   Path path;
 
   std::vector< double > eval_param;
 
-  int segments = 0, expose = 0;
-  double a, px, py, c_a, s_a;
-  double cx=0.0, cy=0.0, ang_deg_ccw=0.0, ang=0.0;
+  int expose = 0;
+  double px, py, c_a, s_a;
+  double ang_deg_ccw=0.0, ang=0.0;
 
 
   err = _eval_var(eval_param, am_node->eval_line, am_node->n_eval_line, macro_param);
@@ -749,7 +764,7 @@ int add_AM_outline( am_ll_node_t *am_node,
 
   if (eval_param.size() < 9) { return -1; }
 
-  segments = eval_param[1];
+  size_t segments = eval_param[1];
 
   if ((2*(segments+1) + 3) != eval_param.size()) { return -3; }
 
@@ -761,7 +776,7 @@ int add_AM_outline( am_ll_node_t *am_node,
   c_a = cos(ang);
   s_a = sin(ang);
 
-  for (i=2; i<(eval_param.size()-1); i+=2) {
+  for (size_t i = 2; i < (eval_param.size()-1); i += 2) {
     px = eval_param[i];
     py = eval_param[i+1];
     path.push_back( dtoc( c_a*px - s_a*py, s_a*px + c_a*py ) );
@@ -778,7 +793,6 @@ int add_AM_outline( am_ll_node_t *am_node,
 
 // realize an arc
 // rotation is applied after (cx,cy) translation
-//
 static void _thermal_arc_path_ccw( Path &path,
                                    double cx,
                                    double cy,
@@ -797,7 +811,6 @@ static void _thermal_arc_path_ccw( Path &path,
 
   // Thermal pads are at most pi/2, so fix up angles if they
   // cross the 0 line
-  //
   if ((rad_end - rad_beg) > (M_PI/2.0)) { rad_end -= 2.0*M_PI; }
   else if ((rad_beg - rad_end) > (M_PI/2.0)) { rad_beg -= 2.0*M_PI; }
 
@@ -825,12 +838,12 @@ static void _thermal_arc_path_ccw( Path &path,
 // By convention, all paths are ccw.
 //
 // returns negative on error, 0 on success.
-//
-int add_AM_thermal( am_ll_node_t *am_node,
-                    std::vector< double > &macro_param,
-                    Paths &paths,
-                    std::vector< int > &exposure ) {
-  int i, j, k, err=0;
+static int add_AM_thermal( am_ll_node_t *am_node,
+                           std::vector< double > &macro_param,
+                           Paths &paths,
+                           std::vector< int > &exposure )
+{
+  int err=0;
 
   std::vector< double > eval_param;
 
@@ -855,7 +868,6 @@ int add_AM_thermal( am_ll_node_t *am_node,
   ang_deg_ccw = eval_param[5];
 
   // check for unrealizable geometry
-  //
   if (gapt > (sqrt(2.0)*outd)) { return -2; }
 
   ang = ang_deg_ccw * M_PI / 180.0;
@@ -867,7 +879,6 @@ int add_AM_thermal( am_ll_node_t *am_node,
   // inner circle 'dissappears', whatever that means.
   // this is my interpretation
   // `See 4.5.4.9 Thermal, Code 7` in rev 2017.11 of `The Gerber Format Specification`
-  //
   if (innr < (sqrt(2.0)*gapt2)) { innr = sqrt(2.0)*gapt2; }
 
   outdel = ( (gapt2 < outr) ? sqrt( outr*outr - (gapt2*gapt2) ) : 0.0 );
@@ -961,96 +972,67 @@ int add_AM_thermal( am_ll_node_t *am_node,
 //
 // return 0 on success
 // non-zero on error
-//
-int realize_macro( gerber_state_t *gs,
-                   Aperture_realization &ap,
-                   std::string &macro_name,
-                   std::vector< double > &macro_param ) {
-  int i, j, err=0, ret=0;
+static int realize_macro( gerber_state_t *gs,
+                          Aperture_realization &ap,
+                          std::string &macro_name,
+                          std::vector< double > &macro_param )
+{
+  int ret=0;
   am_ll_node_t *am_nod = NULL;
   std::vector< double > param_val;
 
   am_nod = aperture_macro_lookup(gs->am_lib_head, macro_name.c_str());
   if (!am_nod) { return -1; }
 
-  // save a copy so we don't polute the original
-  //
+  // save a copy so we don't pollute the original
   param_val = macro_param;
 
   while (am_nod) {
-
     switch (am_nod->type) {
       case AM_ENUM_NAME:
-
         break;
       case AM_ENUM_COMMENT:
-
         break;
       case AM_ENUM_VAR:
-
         ret = eval_AM_var(am_nod, param_val);
-
         if (ret<0) { printf("# var error? ret %i\n", ret); }
         break;
-
       case AM_ENUM_CIRCLE:
-
         ret = add_AM_circle(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# circle error? ret %i\n", ret); }
-
         break;
-
       case AM_ENUM_VECTOR_LINE:
-
         ret = add_AM_vector_line(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# am vector line error? ret %i\n", ret); }
-
         break;
-
       case AM_ENUM_CENTER_LINE:
-
         ret = add_AM_center_line(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# center line  error? ret %i\n", ret); }
-
         break;
-
       case AM_ENUM_OUTLINE:
-
         ret = add_AM_outline(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# outline error? ret %i\n", ret); }
-
         break;
-
       case AM_ENUM_POLYGON:
-
         ret = add_AM_polygon(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# outline error? ret %i\n", ret); }
-
         break;
-
       case AM_ENUM_MOIRE:
-
         ret = add_AM_moire(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# thermal error? ret %i\n", ret); }
-
         break;
-
       case AM_ENUM_THERMAL:
-
         ret = add_AM_thermal(am_nod, param_val, ap.m_macro_path, ap.m_macro_exposure);
         if (ret<0) { printf("# thermal error? ret %i\n", ret); }
-
         break;
-
       default:
-
         break;
     }
 
     am_nod = am_nod->next;
   }
 
-  for (i=0; i<ap.m_macro_path.size(); i++) {
+  for (size_t i = 0; i < ap.m_macro_path.size(); i++) {
     ap.m_path.push_back( ap.m_macro_path[i] );
     ap.m_exposure.push_back( _expose_bit(  ap.m_macro_exposure[i], gs->polarity ) );
   }
@@ -1060,77 +1042,16 @@ int realize_macro( gerber_state_t *gs,
 
 //----
 
-void print_aperture_list(aperture_data_t *ap) {
-  printf("\n");
-  while (ap) {
-    printf("# aperture: %i, type %i, crop_type %i (%f,%f,%f,%f,%f)\n",
-        ap->name, ap->type, ap->crop_type,
-        (float)ap->crop[0], (float)ap->crop[1],
-        (float)ap->crop[2], (float)ap->crop[3],
-        (float)ap->crop[4]);
-    ap = ap->next;
-  }
-}
-
-static void _pst(int n) {
-  int i;
-  for (i=0; i<n; i++) { printf(" "); }
-}
-
-void print_aperture_tree(gerber_state_t *gs, int level) {
-  aperture_data_t *ap;
-  gerber_state_t *par;
-
-  ap = gs->aperture_head;
-
-  printf("# gs:%i ", gs->id);
-  _pst(level+1);
-  printf("...\n");
-  dump_information(gs, 0);
-  while (ap) {
-
-    par=NULL;
-    if (ap->gs) {
-      par = ap->gs->_parent_gerber_state;
-    }
-
-    printf("# gs:%i ", gs->id);
-    _pst(level+1);
-    printf("aperture(%i): %i, type %i, crop_type %i (%f,%f,%f,%f,%f) (gs %i, parent %i)\n",
-        ap->id,
-        ap->name, ap->type, ap->crop_type,
-        (float)ap->crop[0], (float)ap->crop[1],
-        (float)ap->crop[2], (float)ap->crop[3],
-        (float)ap->crop[4],
-        (ap->gs ? ap->gs->id : -1), (par ? par->id : -1));
-
-    if (ap->gs) {
-      print_aperture_tree(ap->gs, level+1);
-    }
-
-    ap = ap->next;
-
-  }
-
-}
-
-//----
-
-aperture_data_t *flatten_aperture_list(gerber_state_t *gs, int level) {
+static aperture_data_t *flatten_aperture_list(gerber_state_t *gs, int level)
+{
   aperture_data_t *ap_node_head;
-  aperture_data_t *ap_node;
   aperture_data_t *ap_flatten_head;
-  aperture_data_t *ap_flatten_last;
-
-  aperture_data_t *_ap;
 
   gerber_item_ll_t *item;
-  gerber_state_t *_gs;
 
   if (!gs) { return NULL; }
 
   ap_node_head = NULL;
-  ap_node = NULL;
 
   for (item = gs->item_head;
        item ;
@@ -1162,79 +1083,17 @@ aperture_data_t *flatten_aperture_list(gerber_state_t *gs, int level) {
 
 //--
 
-
-
-static void _construct_transform_matrix(double *M, int mirror_axis, double rot_deg, double scale) {
-  double c, s, t;
-
-  c = cos(rot_deg * M_PI / 180.0 );
-  s = sin(rot_deg * M_PI / 180.0 );
-
-  memset(M, 0, sizeof(double)*3*3);
-  M[0] = 1.0;
-  M[3*1 + 1] = 1.0;
-  M[3*2 + 2] = 1.0;
-
-  M[0*3 + 0] =  c;
-  M[0*3 + 1] = -s;
-
-  M[1*3 + 0] =  s;
-  M[1*3 + 1] =  c;
-
-  M[0*3 + 0] *= scale;
-  M[0*3 + 1] *= scale;
-  M[1*3 + 0] *= scale;
-  M[1*3 + 1] *= scale;
-
-  if (mirror_axis == MIRROR_AXIS_X) {
-    M[1*3 + 1] *= -1.0;
-  }
-  else if (mirror_axis == MIRROR_AXIS_Y) {
-    M[0*3 + 0] *= -1.0;
-  }
-  else if (mirror_axis == MIRROR_AXIS_XY) {
-    M[0*3 + 0] *= -1.0;
-    M[1*3 + 1] *= -1.0;
-  }
-
-  return;
-}
-
-static void _mulmat3x3(double *result, double *A, double *B) {
-  int r,c,k;
-  double tm[3*3];
-  memset(tm, 0, sizeof(double)*3*3);
-  for (r=0; r<3; r++) for (c=0; c<3; c++) for (k=0;  k<3; k++) {
-    tm[3*r + c] += A[3*r + k] * B[3*k + c];
-  }
-  memcpy(result, tm, sizeof(double)*3*3);
-  return;
-}
-
-
-//--
-
-//int realize_apertures_r(gerber_state_t *gs, double *transformMatrixParent, int level) {
-int realize_apertures_r(gerber_state_t *gs, int level) {
+int realize_apertures(gerber_state_t *gs)
+{
   double min_segment_length = 0.01;
   int min_segments = 8;
   int base, base_mapping[] = {1, 2, 3, 3, 0};
-  int i, ii, jj;
 
   std::string macro_name_str;
 
   aperture_data_t *aperture;
-  gerber_item_ll_t *item;
 
   std::vector< DoublePoint > empty_d_path;
-
-  double transformMatrix[3*3];
-
-  int _mirror_axis = MIRROR_AXIS_NONE;
-  double _rotation_degree = 0.0;
-  double _scale = 1.0;
-
-
 
   //--
 
@@ -1244,15 +1103,12 @@ int realize_apertures_r(gerber_state_t *gs, int level) {
     min_segment_length = gMinSegmentLength;
   }
 
-  for (item = gs->item_head;
-       item ;
-       item = item->next) {
-
+  for (gerber_item_ll_t *item = gs->item_head; item; item = item->next)
+  {
     Aperture_realization ap;
 
-    if ((item->type == GERBER_AD) ||
-        (item->type == GERBER_ADE)) {
-
+    if ((item->type == GERBER_AD) || (item->type == GERBER_ADE))
+    {
       ap.m_name = item->aperture->name;
       ap.m_type = item->aperture->type;
 
@@ -1271,18 +1127,16 @@ int realize_apertures_r(gerber_state_t *gs, int level) {
         case AD_ENUM_POLYGON:
           realize_polygon( gs, ap, aperture->crop[0]/2.0, aperture->crop[1], aperture->crop[2] );
           break;
-
         // an aperture defintion which references a macro (not the aperture macro itself)
-        //
         case AD_ENUM_MACRO:
           ap.m_macro_name = aperture->macro_name;
-          for (ii=0; ii<aperture->macro_param_count; ii++) {
+          for (size_t ii = 0; ii < aperture->macro_param_count; ii++) {
             ap.m_macro_param.push_back(aperture->macro_param[ii]);
           }
           realize_macro( gs, ap, ap.m_macro_name, ap.m_macro_param );
           break;
-
-        default: break;
+        default:
+          break;
       }
 
       base = base_mapping[ aperture->type ];
@@ -1292,86 +1146,64 @@ int realize_apertures_r(gerber_state_t *gs, int level) {
       // 2 - rect hole (?) (TODO?)
       //
       // crop_type should be 0 for aperture macros
-      //
       switch (aperture->crop_type) {
-        case 0: break;
+        case 0:
+          break;
         case 1:
           realize_hole( gs, ap, aperture->crop[base]/2.0, min_segments, min_segment_length );
           break;
         case 2:
+          fprintf(stderr, "TODO: rect_hole\n");
+          exit(-1);
           //realize_rectangle_hole( ap, aperture->crop[base]/2.0, aperture->crop[base+1]/2.0 );
           break;
-        default: break;
+        default:
+          break;
       }
 
       gAperture.insert( ApertureNameMapPair(ap.m_name, ap) );
-      gApertureName.push_back(ap.m_name);
-
     }
-
-    else if (item->type == GERBER_AB) {
-
+    else if (item->type == GERBER_AB)
+    {
       item->aperture_block->polarity         = gs->polarity;
       item->aperture_block->mirror_axis      = gs->mirror_axis;
       item->aperture_block->rotation_degree  = gs->rotation_degree;
       item->aperture_block->scale            = gs->scale;
 
-      //realize_apertures_r(item->aperture_block, transformMatrix, level+1);
-      realize_apertures_r(item->aperture_block, level+1);
+      realize_apertures(item->aperture_block);
 
       gs->polarity        = item->aperture_block->polarity;
       gs->mirror_axis     = item->aperture_block->mirror_axis;
       gs->rotation_degree = item->aperture_block->rotation_degree;
       gs->scale           = item->aperture_block->scale;
-
-      continue;
     }
-
-    else if (item->type == GERBER_SR) {
-
+    else if (item->type == GERBER_SR)
+    {
       item->step_repeat->polarity         = gs->polarity;
       item->step_repeat->mirror_axis      = gs->mirror_axis;
       item->step_repeat->rotation_degree  = gs->rotation_degree;
       item->step_repeat->scale            = gs->scale;
 
-      //realize_apertures_r(item->step_repeat, transformMatrix, level+1);
-      realize_apertures_r(item->step_repeat, level+1);
+      realize_apertures(item->step_repeat);
 
       gs->polarity        = item->step_repeat->polarity;
       gs->mirror_axis     = item->step_repeat->mirror_axis;
       gs->rotation_degree = item->step_repeat->rotation_degree;
       gs->scale           = item->step_repeat->scale;
-
-      continue;
     }
-
-    else if (item->type == GERBER_LM) {
+    else if (item->type == GERBER_LM)
+    {
       gs->mirror_axis = item->mirror_axis;
     }
-
-    else if (item->type == GERBER_LR) {
+    else if (item->type == GERBER_LR)
+    {
       gs->rotation_degree = item->rotation_degree;
     }
-
-    else if (item->type == GERBER_LS) {
+    else if (item->type == GERBER_LS)
+    {
       gs->scale = item->scale;
     }
-
-    else { continue; }
-
   }
 
   return 0;
-}
-
-int realize_apertures(gerber_state_t *gs) {
-  double m[3*3];
-
-  memset(m, 0, sizeof(double)*3*3);
-  m[0] = 1.0;
-  m[1*3 + 1] = 1.0;
-  m[2*3 + 2] = 1.0;
-
-  //return realize_apertures_r(gs, m, 0);
-  return realize_apertures_r(gs, 0);
 }

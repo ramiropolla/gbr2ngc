@@ -82,8 +82,9 @@ void _print_d10p(FILE *fp, gerber_state_t *gs, gerber_item_ll_t *item) {
   fprintf(fp, "D%i*\n", item->d_name);
 }
 
-void _print_am(FILE *fp, gerber_state_t *gs, gerber_item_ll_t *item) {
-  int i, initial_comma=1, n=0;
+void _print_am(FILE *fp, gerber_state_t *gs, gerber_item_ll_t *item)
+{
+  int initial_comma=1, n=0;
   char *typs[10] = {
     "AM_ENUM_NAME",
     "AM_ENUM_COMMENT",
@@ -129,7 +130,7 @@ void _print_am(FILE *fp, gerber_state_t *gs, gerber_item_ll_t *item) {
         else if (am_nod->type == AM_ENUM_MOIRE) { fprintf(fp, "6"); }
         else if (am_nod->type == AM_ENUM_THERMAL) { fprintf(fp, "7"); }
 
-        for (i=0; i<am_nod->n_eval_line; i++) {
+        for (size_t i = 0; i < am_nod->n_eval_line; i++) {
           if (initial_comma || (i>0)) { fprintf(fp, ","); }
           fprintf(fp, "%s", am_nod->eval_line[i]);
         }
