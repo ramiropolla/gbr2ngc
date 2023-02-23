@@ -1033,5 +1033,5 @@ the_end:
   cleanup();
   gerber_state_clear( &gs );
 
-  exit(0);
+  return 0;
 }
