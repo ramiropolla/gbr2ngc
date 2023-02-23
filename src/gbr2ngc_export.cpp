@@ -133,23 +133,12 @@ static void reorder_paths(std::vector<city_t> *_dst, const Paths &src)
     }
   }
 
-  // calculate initial cost
-  int64_t total_cost = 0;
-  city_t prev_i = n_total; // we know the first element is origin
-  for ( city_t i = 0; i < n_total; i++ )
-  {
-    total_cost += costs[prev_i * costs_size + i];
-    prev_i = i;
-  }
-  total_cost += costs[prev_i * costs_size + n_total];
-
   // nearest neighbor
   std::vector<city_t> result_nn(n_total);
   bool *used = (bool *) malloc(sizeof(bool) * n_total);
   for ( city_t i = 0; i < n_total; i++ )
     used[i] = false;
-  total_cost = 0;
-  prev_i = n_total; // we know the first element is origin
+  city_t prev_i = n_total; // we know the first element is origin
   for ( city_t i = 0; i < n_total; i++ )
   {
     city_t best_j = n_total;
@@ -167,10 +156,8 @@ static void reorder_paths(std::vector<city_t> *_dst, const Paths &src)
     }
     result_nn[i] = best_j;
     used[best_j] = true;
-    total_cost += costs[prev_i * costs_size + best_j];
     prev_i = best_j;
   }
-  total_cost += costs[prev_i * costs_size + n_total];
   free(used);
 
   // 2-opt
@@ -191,7 +178,6 @@ _2opt:
       if ( delta < 0 )
       {
         std::reverse(result_2opt.begin() + i + 1, result_2opt.begin() + j + 1);
-        total_cost += delta;
         goto _2opt;
       }
     }
