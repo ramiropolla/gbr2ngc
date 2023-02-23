@@ -85,8 +85,6 @@ typedef int city_t;
 
 static void reorder_paths(std::vector<city_t> *_dst, const Paths &src)
 {
-  std::vector<city_t> &dst = *_dst;
-
   // drop empty paths
   const city_t src_size = src.size();
   std::vector<city_t> result_map;
@@ -185,6 +183,8 @@ _2opt:
 
   free(costs);
 
+  // copy to dst
+  std::vector<city_t> &dst = *_dst;
   dst.resize(n_total);
   for ( city_t i = 0; i < n_total; i++ )
     dst[i] = result_map[result_2opt[i]];
