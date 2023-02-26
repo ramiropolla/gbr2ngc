@@ -45,9 +45,6 @@
 #define ARG_GCODE_FOOTER '3'
 
 static struct option gLongOption[] = {
-  {"radius",            required_argument, nullptr, 'r'},
-  {"fillradius",        required_argument, nullptr, 'F'},
-
   {"input",             required_argument, nullptr, 'i'},
   {"output",            required_argument, nullptr, 'o'},
   {"config-file",       required_argument, nullptr, 'c'},
@@ -65,6 +62,10 @@ static struct option gLongOption[] = {
   {"scale-x",           required_argument, nullptr, 'X'},
   {"scale-y",           required_argument, nullptr, 'Y'},
 
+  {"find-drill-sizes",  no_argument,       nullptr, 'D'},
+  {"drill",             required_argument, nullptr, 'd'},
+  {"cutout",            required_argument, nullptr, 'u'},
+
   {"gcode-header",      required_argument, nullptr, ARG_GCODE_HEADER},
   {"gcode-footer",      required_argument, nullptr, ARG_GCODE_FOOTER},
 
@@ -77,15 +78,6 @@ static struct option gLongOption[] = {
   {"uppercase",         no_argument,       nullptr, 'U'},
   {"machine-readable",  no_argument,       nullptr, 'R'},
 
-  {"horizontal",        no_argument,       nullptr, 'H'},
-  {"vertical",          no_argument,       nullptr, 'V'},
-  {"zengarden",         no_argument,       nullptr, 'G'},
-
-  {"invertfill",        no_argument,       &gInvertFlag, 1},
-  {"simple-infill",     no_argument,       &gSimpleInfill, 1},
-  {"no-outline",        no_argument,       &gDrawOutline, 0},
-  {"drill",             no_argument,       nullptr, 'd'},
-
   {"verbose",           no_argument,       nullptr, 'v'},
   {"version",           no_argument,       nullptr, 'N'},
   {"help",              no_argument,       nullptr, 'h'},
@@ -95,9 +87,6 @@ static struct option gLongOption[] = {
 
 static char gOptionDescription[][1024] =
 {
-  "radius (default 0) (units in inches)",
-  "radius to be used for fill pattern (default to radius above)",
-
   "input file",
   "output file (default stdout)",
   "configuration file (default ./gbr2ngc.ini)",
@@ -115,6 +104,10 @@ static char gOptionDescription[][1024] =
   "scale for x coordinates in gerber file",
   "scale for y coordinates in gerber file",
 
+  "find drill sizes and exit",
+  "drill holes/slots",
+  "cutout",
+
   "prepend custom G-code to the beginning of the program",
   "append custom G-code to the end of the program",
 
@@ -126,15 +119,6 @@ static char gOptionDescription[][1024] =
   "do not show comments",
   "uppercase",
   "machine readable (uppercase, no spaces in gcode)",
-
-  "route out blank areas with a horizontal scan line technique",
-  "route out blank areas with a vertical scan line technique",
-  "route out blank areas with a 'zen garden' technique",
-
-  "invert the fill pattern (experimental)",
-  "infill copper polygons with pattern (currently only -H and -V supported)",
-  "do not route out outline when doing infill",
-  "drill holes/slots",
 
   "verbose",
   "display version information",
@@ -241,18 +225,9 @@ static bool set_option(const char option_char, const char* optarg)
     case 'R':
       gHumanReadable = bool_option(optarg, false);
       break;
-    case 'r':
-      gRadius = atof(optarg);
-      break;
-    case 'F':
-      gFillRadius = atof(optarg);
-      break;
-    case '$':
-      gFillRadius = atof(optarg);
-      break;
     case 's':
+      gSeekRate = atof(optarg);
       gSeekRateSet = true;
-      gSeekRate = atoi(optarg);
       break;
     case 'z':
       gZSafe = atof(optarg);
@@ -262,6 +237,9 @@ static bool set_option(const char option_char, const char* optarg)
       break;
     case 'O':
       gFindExtremes = bool_option(optarg);
+      break;
+    case 'D':
+      gFindDrillSizes = bool_option(optarg);
       break;
     case 'x':
       gOffsetX = atoll(optarg);
@@ -276,7 +254,7 @@ static bool set_option(const char option_char, const char* optarg)
       gScaleY = atof(optarg);
       break;
     case 'f':
-      gFeedRate = atoi(optarg);
+      gFeedRate = atof(optarg);
       gFeedRateSet = true;
       break;
     case 'S':
@@ -291,7 +269,7 @@ static bool set_option(const char option_char, const char* optarg)
       gGCodeFooter = strdup(optarg);
       break;
 
-    case 'D':
+    case 'g':
       gDebug=1;
       break;
 
@@ -308,18 +286,12 @@ static bool set_option(const char option_char, const char* optarg)
       gUnitsDefault = 0;
       break;
 
-    case 'H':
-      gScanLineHorizontal = bool_option(optarg);
-      break;
-    case 'V':
-      gScanLineVertical = bool_option(optarg);
-      break;
-    case 'G':
-      gScanLineZenGarden = bool_option(optarg);
-      break;
-
     case 'd':
-      gDrill = bool_option(optarg);
+      gDrill = atoi(optarg);
+      break;
+    case 'u':
+      gCutout = atof(optarg);
+      gCutoutSet = true;
       break;
 
     case 'v':
@@ -385,8 +357,6 @@ static void process_command_line_options(int argc, char **argv)
 
   char ch;
 
-  gFillRadius = -1.0;
-
   // Check if a custom path for the configuration file was given. If so,
   // those options need to be loaded before applying the command-line
   // options.
@@ -430,7 +400,7 @@ static void process_command_line_options(int argc, char **argv)
         exit(0);
         break;
 
-      case 'D':
+      case 'g':
         gDebug=1;
         break;
 
@@ -478,34 +448,6 @@ static void process_command_line_options(int argc, char **argv)
     }
   }
 
-  if (gFillRadius <= 0.0) {
-    gFillRadius = gRadius;
-  }
-
-
-  if ( ((gScanLineHorizontal + gScanLineVertical + gScanLineZenGarden)>0) &&
-       ((gRadius < eps) && (gFillRadius < eps)) ) {
-    fprintf(stderr, "ERROR: Radius (-r) or fill radius (-F) must be specified for fill options (-H, -V or -G)\n");
-    show_help(stderr);
-    exit(1);
-  }
-
-  if ((gSimpleInfill>0) && (gRadius >= eps)) {
-    fprintf(stderr, "ERROR: Cannot specify offset radius (-r) for simple infills (-H or -V)\n");
-    show_help(stderr);
-    exit(1);
-  }
-
-  if ((gSimpleInfill>0) && (gScanLineZenGarden>0)) {
-    fprintf(stderr, "ERROR: Currently simple infills do not support the zen garden fill pattern, please use -H or -V\n");
-    show_help(stderr);
-    exit(1);
-  }
-
-  if (gVerboseFlag) {
-    fprintf(gOutStream, "( radius %f )\n", gRadius);
-  }
-
   if (!gHumanReadable) {
     gShowComments = false;
     gUppercase = true;
@@ -531,326 +473,6 @@ static void cleanup(void)
   if (gGCodeFooter) { free(gGCodeFooter); }
 }
 
-static void construct_polygon_offset(Paths *_soln, const Paths &src)
-{
-  Paths &soln = *_soln;
-  ClipperOffset co;
-
-  co.MiterLimit = 3.0;
-
-  co.AddPaths( src, jtMiter, etClosedPolygon);
-  co.Execute( soln, g_scalefactor * gRadius );
-}
-
-static void find_min_max(IntPoint *minp, IntPoint *maxp, const Paths &src)
-{
-  int i, j, n, m;
-
-  minp->X = 0;
-  minp->Y = 0;
-  maxp->X = 0;
-  maxp->Y = 0;
-
-  n = src.size();
-  for (i=0; i<n; i++) {
-    m = src[i].size();
-    if ( m == 0 ) continue;
-    if (i==0) {
-      minp->X = src[i][0].X;
-      minp->Y = src[i][0].Y;
-      maxp->X = src[i][0].X;
-      maxp->Y = src[i][0].Y;
-    }
-
-    for (j=0; j<m; j++) {
-      if (minp->X > src[i][j].X) minp->X = src[i][j].X;
-      if (minp->Y > src[i][j].Y) minp->Y = src[i][j].Y;
-      if (maxp->X < src[i][j].X) maxp->X = src[i][j].X;
-      if (maxp->Y < src[i][j].Y) maxp->Y = src[i][j].Y;
-    }
-  }
-
-  minp->X--;
-  minp->Y--;
-  maxp->X++;
-  maxp->Y++;
-}
-
-
-static void do_zen_r(Paths *_paths, const IntPoint &minp, const IntPoint &maxp)
-{
-  Paths &paths = *_paths;
-  static int recur_count=0;
-  int i, n, m;
-  unsigned int k;
-  ClipperOffset co;
-  Paths soln;
-  Paths tpath;
-
-  IntPoint minpathp, maxpathp;
-
-  // We assume at least an outer boundary.  If only
-  // the outer boundary is left, we've finished
-  //
-  if (paths.size() <= 1) {
-    return;
-  }
-
-  co.MiterLimit = 3.0;
-  recur_count++;
-  if(recur_count==400) {
-    return;
-  }
-
-  if (paths.size() == 0) {
-    return;
-  }
-
-  co.AddPaths( paths, jtMiter, etClosedPolygon);
-  co.Execute( soln, 2.0 * g_scalefactor * gFillRadius );
-
-  do_zen_r(&soln, minp, maxp);
-
-  n = soln.size();
-  for (i=0; i<n; i++) {
-    m = soln[i].size();
-    if (m <= 2 ) { continue; }
-
-
-    for (k=0; k<soln[i].size(); k++) {
-      if ( (soln[i][k].X < minp.X) ||
-           (soln[i][k].Y < minp.Y) ||
-           (soln[i][k].X > maxp.X) ||
-           (soln[i][k].Y > maxp.Y) )
-        break;
-    }
-    if (k<soln[i].size()) { continue; }
-
-    paths.push_back(soln[i]);
-  }
-
-}
-
-
-
-// extends outwards.  Need to do a final intersect with final (rectangle) polygon
-//
-static void do_zen(Paths *_dst, const Paths &src)
-{
-  Paths &dst = *_dst;
-  static int recur_count=0;
-  ClipperOffset co;
-  Paths soln;
-  Paths tpath;
-
-  IntPoint minp, maxp;
-
-  co.MiterLimit = 3.0;
-
-  recur_count++;
-  if(recur_count==400) { return; }
-
-  if (src.size() == 0) { return; }
-
-  find_min_max(&minp, &maxp, src);
-
-  co.AddPaths( src, jtMiter, etClosedPolygon);
-  co.Execute( soln, 2.0 * g_scalefactor * gFillRadius );
-
-  do_zen_r(&soln, minp, maxp);
-
-  dst.insert( dst.end(), soln.begin(), soln.end() );
-}
-
-static void do_horizontal(Paths *_dst, const Paths &src)
-{
-  Paths &dst = *_dst;
-  Paths line_collection;
-  cInt h;
-  cInt cury;
-  IntPoint minp, maxp;
-
-  h = 2.0 * g_scalefactor * gFillRadius;
-  h++;
-
-  find_min_max(&minp, &maxp, src);
-
-  cury = minp.Y;
-
-  while ( cury < maxp.Y ) {
-    Path line;
-    Paths soln;
-    Clipper clip;
-
-    line.push_back( IntPoint( minp.X, cury ) );
-    line.push_back( IntPoint( maxp.X, cury ) );
-    line.push_back( IntPoint( maxp.X, cury + h ) );
-    line.push_back( IntPoint( minp.X, cury + h ) );
-
-    cury += 2*h;
-
-    clip.AddPath( line, ptSubject, true );
-    clip.AddPaths( src, ptClip, true );
-    clip.Execute( ctDifference, soln, pftNonZero, pftNonZero );
-
-    line_collection.insert( line_collection.end(), soln.begin(), soln.end() );
-  }
-
-  dst.insert( dst.end(), line_collection.begin(), line_collection.end() );
-}
-
-static void do_horizontal_infill(Paths *_dst, const Paths &src)
-{
-  Paths &dst = *_dst;
-  Paths line_collection;
-  cInt h;
-  cInt cury;
-  IntPoint minp, maxp;
-
-
-  h = 2.0 * g_scalefactor * gFillRadius;
-  h++;
-
-  find_min_max(&minp, &maxp, src);
-
-  cury = minp.Y;
-
-  while ( cury < maxp.Y ) {
-    Path line;
-    Paths soln;
-    Clipper clip;
-
-    line.push_back( IntPoint( minp.X, cury ) );
-    line.push_back( IntPoint( maxp.X, cury ) );
-    line.push_back( IntPoint( maxp.X, cury + h ) );
-    line.push_back( IntPoint( minp.X, cury + h ) );
-
-    cury += 2*h;
-
-    clip.AddPaths( src, ptSubject, true );
-    clip.AddPath( line, ptClip, true );
-    clip.Execute( ctIntersection, soln, pftNonZero, pftNonZero );
-
-    line_collection.insert( line_collection.end(), soln.begin(), soln.end() );
-  }
-
-  dst.insert( dst.end(), line_collection.begin(), line_collection.end() );
-
-  if (gDrawOutline) {
-    dst.insert( dst.end(), src.begin(), src.end());
-  }
-}
-
-
-static void do_vertical(Paths *_dst, const Paths &src)
-{
-  Paths &dst = *_dst;
-  Paths line_collection;
-  cInt w;
-  cInt curx;
-  IntPoint minp, maxp;
-
-  w = 2.0 * g_scalefactor * gFillRadius ;
-  w++;
-
-  find_min_max(&minp, &maxp, src);
-
-  curx = minp.X;
-  while ( curx < maxp.X ) {
-    Path line;
-    Paths soln;
-    Clipper clip;
-
-    line.push_back( IntPoint( curx, minp.Y ) );
-    line.push_back( IntPoint( curx, maxp.Y ) );
-    line.push_back( IntPoint( curx + w, maxp.Y ) );
-    line.push_back( IntPoint( curx + w, minp.Y ) );
-
-    curx += 2*w;
-
-    clip.AddPath( line, ptSubject, true );
-    clip.AddPaths( src, ptClip, true );
-    clip.Execute( ctDifference, soln, pftNonZero, pftNonZero );
-
-    line_collection.insert( line_collection.end(), soln.begin(), soln.end() );
-  }
-
-  dst.insert( dst.end(), line_collection.begin(), line_collection.end() );
-}
-
-static void do_vertical_infill(Paths *_dst, const Paths &src)
-{
-  Paths &dst = *_dst;
-  Paths line_collection;
-  cInt w;
-  cInt curx;
-  IntPoint minp, maxp;
-
-  w = 2.0 * g_scalefactor * gFillRadius ;
-  w++;
-
-  find_min_max(&minp, &maxp, src);
-
-  curx = minp.X;
-  while ( curx < maxp.X ) {
-    Path line;
-    Paths soln;
-    Clipper clip;
-
-    line.push_back( IntPoint( curx, minp.Y ) );
-    line.push_back( IntPoint( curx, maxp.Y ) );
-    line.push_back( IntPoint( curx + w, maxp.Y ) );
-    line.push_back( IntPoint( curx + w, minp.Y ) );
-
-    curx += 2*w;
-
-    clip.AddPaths( src, ptSubject, true );
-    clip.AddPath( line, ptClip, true );
-    clip.Execute( ctIntersection, soln, pftNonZero, pftNonZero );
-
-    line_collection.insert( line_collection.end(), soln.begin(), soln.end() );
-  }
-
-  dst.insert( dst.end(), line_collection.begin(), line_collection.end() );
-
-  if (gDrawOutline) {
-    dst.insert( dst.end(), src.begin(), src.end());
-  }
-}
-
-static void invert(Paths *_dst, const Paths &src)
-{
-  Paths &dst = *_dst;
-  unsigned int i;
-  ClipperOffset co;
-  Clipper clip_stencil;
-
-  Paths stencil;
-  Paths oot;
-  Path p;
-
-  // Construct outline stencil
-  //
-  for (i=0; i<src.size(); i++) {
-    p = src[i];
-    if (Area(p) < 0.0) { std::reverse(p.begin(), p.end()); }
-    clip_stencil.AddPath(p, ptSubject, true);
-  }
-  clip_stencil.Execute(ctUnion, stencil, pftNonZero, pftNonZero);
-
-  for (i=0; i<stencil.size(); i++) {
-    dst.push_back(stencil[i]);
-  }
-
-  // Reverse all paths for the inversion
-  //
-  for (i=0; i<src.size(); i++) {
-    p = src[i];
-    std::reverse(p.begin(), p.end());
-    dst.push_back(p);
-  }
-}
-
 static void setup_aperture_blocks_r(gerber_state_t *gs, int level)
 {
   for ( gerber_item_ll_t *item = gs->item_head; item; item = item->next )
@@ -870,12 +492,9 @@ static void setup_aperture_blocks(gerber_state_t *gs)
 
 int main(int argc, char **argv)
 {
-  int k, ret;
   gerber_state_t gs;
-
   Paths pgn_union;
-
-  std::vector< double > xyz;
+  int ret;
 
   //----
 
@@ -885,8 +504,8 @@ int main(int argc, char **argv)
   //
   gerber_state_init(&gs);
 
-  k = gerber_state_load_file(&gs, gInputFilename);
-  if (k < 0) {
+  ret = gerber_state_load_file(&gs, gInputFilename);
+  if (ret < 0) {
     perror(gInputFilename);
     exit(errno);
   }
@@ -895,7 +514,6 @@ int main(int argc, char **argv)
     dump_information(&gs, 0);
     exit(1);
   }
-
 
   // Construct library of atomic shapes and create polygons
   realize_apertures(&gs);
@@ -913,12 +531,30 @@ int main(int argc, char **argv)
     gMinSegmentLength = ( gMetricUnits ? gMinSegmentLengthMM : gMinSegmentLengthInch );
   }
 
-  if (gDrill)
+  if ( (gDrill != 0) || gFindDrillSizes )
     join_drill_set(&gs, &pgn_union);
   else
     join_polygon_set(&gs, &pgn_union);
 
-  if (gFindExtremes) {
+  if ( gFindDrillSizes )
+  {
+    // typedef std::map<int, Aperture_realization> ApertureNameMap;
+    printf("{");
+    bool first = true;
+    for ( const auto &iter : gAperture )
+    {
+      const Aperture_realization &ap = iter.second;
+      if ( !first )
+        printf(", ");
+      first = false;
+      printf("\"%d\": { \"diameter\": %f, \"type\": \"%s\" }", iter.first, ap.m_hole_d, (ap.m_hole_t == htSlot) ? "slot" : "drill");
+    }
+    printf("}\n");
+    goto the_end;
+  }
+
+  if ( gFindExtremes || gCutoutSet )
+  {
     int64_t min_x = INT64_MAX;
     int64_t max_x = INT64_MIN;
     int64_t min_y = INT64_MAX;
@@ -933,101 +569,17 @@ int main(int argc, char **argv)
         if ( max_y < intpoint.Y ) max_y = intpoint.Y;
       }
     }
-    printf("%" PRId64 ",%" PRId64 ",%" PRId64 ",%" PRId64 "\n", min_x, max_x, min_y, max_y);
-    goto the_end;
-  }
-
-  if (gShowComments) {
-    fprintf( gOutStream, "( segment length %f )\n", gMinSegmentLength );
-  }
-
-  if (gShowComments) {
-    fprintf( gOutStream, "( union path size %lu )\n", pgn_union.size());
-  }
-
-
-  {
-    if (gShowComments) {
-      fprintf(gOutStream, "\n");
-      fprintf(gOutStream, "( start )\n");
+    if ( gFindExtremes )
+    {
+      printf("{ \"min_x\": %" PRId64 ", \"max_x\": %" PRId64 ", \"min_y\": %" PRId64 ", \"max_y\": %" PRId64 " }\n", min_x, max_x, min_y, max_y);
+      goto the_end;
     }
-    // G20 - Inch Units
-    // G21 - Millimeter Units
-    fprintf(gOutStream, "%c%s\n", char_G, (gMetricUnits ? "21" : "20"));
-    // G90 - Absolute Positioning
-    fprintf(gOutStream, "%c90\n", char_G);
-    // G94 - Units per Minute Feed Mode
-    fprintf(gOutStream, "%c94\n", char_G);
-    // Set Feed Rate
-    fprintf(gOutStream, "%c%" GCODE_LENGTH_PRECISION "f\n", char_F, (double)gFeedRate);
-    gCurRate = gFeedRate;
-    // Move Z up to zsafe
-    rapid(gOutStream, "z", gZSafe);
-    // M03 - Spindle Clockwise
-    fprintf(gOutStream, "%c03", char_M);
-    if (gSpindleSpeedSet) {
-      // Spindle Speed
-      fprintf(gOutStream, " %c%d", char_S, gSpindleSpeed);
-    }
-    fprintf(gOutStream, "\n");
-    // G4 - Dwell
-    fprintf(gOutStream, "%c4 %c1\n", char_G, char_P);
+    // gCutout
+    join_cutout_set(&gs, &pgn_union, min_x, max_x, min_y, max_y);
   }
 
-  if ((gSimpleInfill>0) && (gFillRadius > eps)) {
-    Paths fin_polygons;
-
-    if      ( gScanLineVertical )   { do_vertical_infill(&fin_polygons, pgn_union); }
-    else if ( gScanLineHorizontal ) { do_horizontal_infill(&fin_polygons, pgn_union); }
-    else { //error
-      fprintf(stderr, "unsupported command (for simple-infill)\n");
-      exit(1);
-    }
-
-    export_paths_to_gcode_unit(gOutStream, fin_polygons, gs.units_metric, gMetricUnits);
-  }
-
-  // Offsetting is enabled if the tool radius is specified
-  //
-  else if ((gRadius > eps) || (gFillRadius > eps)) {
-    Paths offset_polygons;
-
-    construct_polygon_offset(&offset_polygons, pgn_union);
-
-    if (gInvertFlag) {
-      Paths inverted_polygons;
-
-      if (gShowComments) { fprintf( gOutStream, "( inverted selection radius %f, fill radius %f )\n", gRadius, gFillRadius ); }
-
-      invert(&inverted_polygons, offset_polygons);
-      if      ( gScanLineZenGarden )  { do_zen(&offset_polygons, inverted_polygons); }
-      else if ( gScanLineVertical )   { do_vertical(&offset_polygons, inverted_polygons); }
-      else if ( gScanLineHorizontal ) { do_horizontal(&offset_polygons, inverted_polygons); }
-
-    } else {
-
-      if      ( gScanLineZenGarden )  { do_zen(&offset_polygons, offset_polygons); }
-      else if ( gScanLineVertical )   { do_vertical(&offset_polygons, offset_polygons); }
-      else if ( gScanLineHorizontal ) { do_horizontal(&offset_polygons, offset_polygons); }
-
-    }
-
-    export_paths_to_gcode_unit(gOutStream, offset_polygons, gs.units_metric, gMetricUnits);
-  }
-  else {
-    ret = export_paths_to_gcode_unit(gOutStream, pgn_union, gs.units_metric, gMetricUnits);
-    if (ret < 0) { fprintf(stderr, "got %i\n", ret); }
-  }
-
-  {
-    if (gShowComments) {
-      fprintf(gOutStream, "( end )\n");
-    }
-    // Move X/Y back to origin
-    rapid(gOutStream, "xy", 0, 0);
-    // M05 - Spindle Off
-    fprintf(gOutStream, "%c05\n", char_M);
-  }
+  ret = export_paths_to_gcode_unit(gOutStream, pgn_union, gs.units_metric, gMetricUnits);
+  if (ret < 0) { fprintf(stderr, "got %i\n", ret); }
 
 the_end:
   cleanup();

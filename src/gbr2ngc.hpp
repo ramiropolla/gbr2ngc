@@ -65,6 +65,8 @@ using namespace ClipperLib;
 typedef std::vector< DoublePoint > PathDouble;
 typedef std::vector< PathDouble > PathsDouble;
 
+enum HoleType { htDrill, htSlot };
+
 class Aperture_realization {
   public:
     Aperture_realization() { };
@@ -74,6 +76,7 @@ class Aperture_realization {
     int m_type;
 
     double m_hole_d;
+    HoleType m_hole_t;
 
     std::string m_macro_name;
     std::vector< double > m_macro_param;
@@ -112,11 +115,11 @@ extern char *gConfigFilename;
 extern char *gGCodeHeader;
 extern char *gGCodeFooter;
 
-extern int gFeedRate;
+extern double gFeedRate;
 extern bool gFeedRateSet;
-extern int gSeekRate;
+extern double gSeekRate;
 extern bool gSeekRateSet;
-extern int gCurRate;
+extern double gCurRate;
 extern int gSpindleSpeed;
 extern bool gSpindleSpeedSet;
 
@@ -130,10 +133,6 @@ extern char char_M;
 extern char char_P;
 extern char char_S;
 
-extern int gScanLineVertical;
-extern int gScanLineHorizontal;
-extern int gScanLineZenGarden;
-
 extern double gZSafe;
 extern double gZCut;
 
@@ -143,18 +142,14 @@ extern int64_t gOffsetY;
 extern double gScaleX;
 extern double gScaleY;
 
+extern bool gFindDrillSizes;
+extern int gDrill;
+extern double gCutout;
+extern bool gCutoutSet;
+
 extern FILE *gOutStream;
 extern FILE *gInpStream;
 extern FILE *gCfgStream;
-
-extern double eps;
-extern double gRadius;
-extern double gFillRadius;
-
-extern int gInvertFlag;
-extern int gSimpleInfill;
-extern int gDrawOutline;
-extern bool gDrill;
 
 extern int gMinSegment;
 extern double gMinSegmentLengthInch;
@@ -164,9 +159,6 @@ extern double gMinSegmentLength;
 extern ApertureNameMap gAperture;
 
 extern ApertureBlockMap gApertureBlock;
-
-extern struct timeval gProfileStart;
-extern struct timeval gProfileEnd;
 
 //----- aperture functions
 
@@ -178,8 +170,9 @@ int realize_apertures(gerber_state_t *gs);
 typedef std::vector< Paths > PathSet;
 
 void print_polygon_set(gerber_state_t *gs);
-int join_polygon_set(gerber_state_t *gs, Paths *result);
-int join_drill_set(gerber_state_t *gs, Paths *result);
+int join_polygon_set(gerber_state_t *gs, Paths *_result);
+int join_drill_set(gerber_state_t *gs, Paths *_result);
+int join_cutout_set(gerber_state_t *gs, Paths *_result, int64_t _min_x, int64_t _max_x, int64_t _min_y, int64_t _max_y);
 
 //----- export functions
 

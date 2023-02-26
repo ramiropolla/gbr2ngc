@@ -12,7 +12,6 @@ GBR2NGC-OBJS += gbr2ngc_aperture.o
 GBR2NGC-OBJS += gbr2ngc_construct.o
 GBR2NGC-OBJS += gbr2ngc_export.o
 GBR2NGC-OBJS += gbr2ngc_globals.o
-GBR2NGC-OBJS += gbr2ngc_profile.o
 GBR2NGC-OBJS += tesexpr.o
 
 TEST-OBJS += $(COMMON-OBJS)

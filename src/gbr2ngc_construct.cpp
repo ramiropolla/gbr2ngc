@@ -135,13 +135,9 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
                                                 gerber_item_ll_t *contour)
 {
   bool first = true;
-  int n_seg=16, n;
   double C = 1000000000000.0;
   Gerber_point_2 prev_pnt;
   Gerber_point_2 dpnt;
-
-  double ang_rad, tr, tx, ty, _p;
-  int _segment;
 
   prev_pnt.ix = 0;
   prev_pnt.iy = 0;
@@ -149,10 +145,10 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
   // Get rid of points that are duplicated next to each other.
   // It does no good to have them and it just makes things more
   // complicated downstream to work around them.
-  //
-  for ( ; contour ; contour = contour->next) {
-
-    switch (contour->type) {
+  for ( ; contour ; contour = contour->next)
+  {
+    switch (contour->type)
+    {
       case GERBER_REGION_G74: gs->quadrent_mode = QUADRENT_MODE_SINGLE; continue; break;
       case GERBER_REGION_G75: gs->quadrent_mode = QUADRENT_MODE_MULTI; continue; break;
       case GERBER_REGION_G01: gs->interpolation_mode = INTERPOLATION_MODE_LINEAR; continue; break;
@@ -161,7 +157,7 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       default: break;
     }
 
-    if (contour->type == GERBER_REGION_SEGMENT)
+    if ( contour->type == GERBER_REGION_SEGMENT )
     {
       dpnt.ix = (int64_t)(contour->x * C);
       dpnt.iy = (int64_t)(contour->y * C);
@@ -169,30 +165,36 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       dpnt.x = contour->x;
       dpnt.y = contour->y;
 
-      if (first) { p.push_back( dpnt ); }
-      else if ( (prev_pnt.ix == dpnt.ix) &&
-                (prev_pnt.iy == dpnt.iy) ) {
+      if ( first )
+      {
+        p.push_back(dpnt);
+      }
+      else if ( (prev_pnt.ix == dpnt.ix) && (prev_pnt.iy == dpnt.iy) )
+      {
         // duplicate
       }
-      else { p.push_back( dpnt ); }
+      else
+      {
+        p.push_back(dpnt);
+      }
 
       prev_pnt = dpnt;
       first = false;
     }
-    else if (contour->type == GERBER_REGION_SEGMENT_ARC)
+    else if ( contour->type == GERBER_REGION_SEGMENT_ARC )
     {
-      n_seg = _get_segment_count(contour->arc_r, gMinSegmentLength, gMinSegment);
+      int n_seg = _get_segment_count(contour->arc_r, gMinSegmentLength, gMinSegment);
 
-      for (_segment=1; _segment<n_seg; _segment++) {
+      for ( int _segment = 1; _segment < n_seg; _segment++ )
+      {
+        double _p = ((double) _segment) / ((double)(n_seg - 1));
 
-        _p = ((double)_segment) / ((double)(n_seg-1));
-
-        ang_rad = contour->arc_ang_rad_beg;
+        double ang_rad = contour->arc_ang_rad_beg;
         ang_rad += contour->arc_ang_rad_del * _p;
 
-        tr = contour->arc_r + (_p * contour->arc_r_deviation);
-        tx = tr*cos(ang_rad) + contour->arc_center_x;
-        ty = tr*sin(ang_rad) + contour->arc_center_y;
+        double tr = contour->arc_r + (_p * contour->arc_r_deviation);
+        double tx = tr * cos(ang_rad) + contour->arc_center_x;
+        double ty = tr * sin(ang_rad) + contour->arc_center_y;
 
         dpnt.ix = (int64_t)(tx * C);
         dpnt.iy = (int64_t)(ty * C);
@@ -200,18 +202,24 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
         dpnt.x = tx;
         dpnt.y = ty;
 
-        if (first) { p.push_back( dpnt ); }
-        else if ( (prev_pnt.ix == dpnt.ix) &&
-                  (prev_pnt.iy == dpnt.iy) ) {
+        if ( first )
+        {
+          p.push_back(dpnt);
+        }
+        else if ( (prev_pnt.ix == dpnt.ix) && (prev_pnt.iy == dpnt.iy) )
+        {
           // duplicate
         }
-        else { p.push_back( dpnt ); }
+        else
+        {
+          p.push_back(dpnt);
+        }
 
         prev_pnt = dpnt;
         first = false;
       }
     }
-    else if (contour->type == GERBER_REGION_MOVE)
+    else if ( contour->type == GERBER_REGION_MOVE )
     {
       dpnt.ix = (int64_t)(contour->x * C);
       dpnt.iy = (int64_t)(contour->y * C);
@@ -219,9 +227,14 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
       dpnt.x = contour->x;
       dpnt.y = contour->y;
 
-      n = p.size();
-      if ((n>0) && (p[n-1].ix == dpnt.ix) && (p[n-1].iy == dpnt.iy)) { }
-      else { p.push_back( dpnt ); }
+      int n = p.size();
+      if ( (n > 0) && (p[n - 1].ix == dpnt.ix) && (p[n - 1].iy == dpnt.iy) )
+      {
+      }
+      else
+      {
+        p.push_back(dpnt);
+      }
 
       prev_pnt = dpnt;
       first = false;
@@ -233,7 +246,6 @@ void populate_gerber_point_vector_from_contour( gerber_state_t *gs,
   }
 }
 
-
 // Create the start and end positions of the holes in the vector p.
 // Store in hole_map.
 static int gerber_point_2_decorate_with_jump_pos( std::vector< Gerber_point_2 > &p )
@@ -242,18 +254,13 @@ static int gerber_point_2_decorate_with_jump_pos( std::vector< Gerber_point_2 > 
   for ( size_t i = 0; i < p.size(); i++ )
   {
     p[i].jump_pos = -1;
-    if ( hole_map.find( p[i] ) != hole_map.end() )
+    if ( hole_map.find(p[i]) != hole_map.end() )
     {
       // if found in p_map, add it to our map
-      int k = hole_map[ p[i] ];
-      p[ k ].jump_pos = i;
-      hole_map[ p[i] ] = i;
+      int k = hole_map[p[i]];
+      p[k].jump_pos = i;
     }
-    else
-    {
-      // otherwise add it
-      hole_map[ p[i] ] = i;
-    }
+    hole_map[p[i]] = i;
   }
   return 0;
 }
@@ -267,11 +274,9 @@ static int gerber_point_2_decorate_with_jump_pos( std::vector< Gerber_point_2 > 
 // contour.
 // Construct the point vector and hole map.  Create the polygon with holes
 // vector.
-int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_ll_t *contour )
+static int construct_contour_region(gerber_state_t *gs, PathSet &pwh_vec, gerber_item_ll_t *contour)
 {
-  int i, ds;
-
-  std::vector< Gerber_point_2 > p;
+  std::vector<Gerber_point_2> p;
 
   Path path;
   Paths pwh, soln;
@@ -279,16 +284,17 @@ int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_
   Clipper clip;
 
   // Initially populate p vector
-  populate_gerber_point_vector_from_contour( gs, p, contour );
+  populate_gerber_point_vector_from_contour(gs, p, contour);
 
   // Find the start and end regions for each of the
   // holes.
-  gerber_point_2_decorate_with_jump_pos( p );
+  gerber_point_2_decorate_with_jump_pos(p);
 
-  if (p.size()==0) { return -1; }
+  if ( p.empty() )
+    return -1;
 
   int n = p.size();
-  for ( i = 0; i < n; i++ )
+  for ( int i = 0; i < n; i++ )
   {
     path.push_back( dtoc( p[i].x, p[i].y ) );
     if ( p[i].jump_pos < 0 )
@@ -296,11 +302,11 @@ int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_
 
     // Special case when the boundary end ties back to the beginning
     // without any jumps to holes.
-    if ( p[i].jump_pos == (n-1) )
+    if ( p[i].jump_pos == (n - 1) )
       continue;
 
-    ds = p[i].jump_pos - (i+1);
-    add_hole( pwh, p, i+1, ds );
+    int ds = p[i].jump_pos - (i + 1);
+    add_hole(pwh, p, i + 1, ds);
     i += ds;
   }
   pwh.push_back(path);
@@ -319,20 +325,6 @@ int construct_contour_region( gerber_state_t *gs, PathSet &pwh_vec, gerber_item_
 
 
 //-----------------------------------------
-
-bool isccw( Path &p )
-{
-  cInt s = 0;
-  for ( size_t i = 1; i < p.size(); i++ )
-  {
-    cInt dx = p[i].X - p[0].X;
-    cInt dy = p[i].Y - p[0].Y;
-    s += dx*dy;
-  }
-  return s < 0;
-}
-
-//--
 
 static void _construct_transform_matrix(double *M, int mirror_axis, double rot_deg, double scale, double tx, double ty)
 {
@@ -421,7 +413,7 @@ static void _mulvec3(double *result, const double *M, const double *v)
 static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip, const double *transformMatrixParent)
 {
   Paths &result = *_result;
-  unsigned int i, ii;
+  unsigned int ii;
 
   gerber_item_ll_t *item_nod;
   gerber_item_ll_t *region;
@@ -440,7 +432,7 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
 
   double dx, dy;
 
-  double ang_rad, tx, ty, tr, _p;
+  double tx, ty, tr, _p;
   int n_seg = 16;
 
   int stack_polarity, stack_d_name, stack_pmrs_active;
@@ -504,33 +496,24 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
       temp_pwh_vec.clear();
       construct_contour_region(gs, temp_pwh_vec, item_nod->region_head);
 
-      if ( ! _expose_bit(polarity) ) {
-
-        for (i=0; i<temp_pwh_vec.size(); i++) {
-          clip.AddPaths( temp_pwh_vec[i], ptClip, true );
-        }
-
+      if ( !_expose_bit(polarity) )
+      {
+        for ( const Paths &paths : temp_pwh_vec )
+          clip.AddPaths(paths, ptClip, true);
         it_paths.clear();
         clip.Execute(ctDifference, it_paths, pftNonZero, pftNonZero);
-
         clip.Clear();
         clip.AddPaths(it_paths, ptSubject, true);
-
         _clip_update = 1;
       }
-      else {
-
-        for (i=0; i<temp_pwh_vec.size(); i++) {
-          clip.AddPaths( temp_pwh_vec[i], ptSubject, true );
-        }
-
+      else
+      {
+        for ( const Paths &paths : temp_pwh_vec )
+          clip.AddPaths(paths, ptSubject, true);
       }
 
-
-
-      if (_clip_update) {
+      if ( _clip_update )
         clip.Execute( ctUnion, result, pftNonZero, pftNonZero );
-      }
 
       continue;
     }
@@ -563,12 +546,12 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
       _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, ctod(prev_pnt.X), ctod(prev_pnt.Y));
       _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
 
-      for (ii=0; ii<gAperture[ name ].m_path.size(); ii++)
+      for ( ii = 0; ii < gAperture[name].m_path.size(); ii++ )
       {
-        for (size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++)
+        for ( size_t jj = 0; jj < gAperture[name].m_path[ii].size(); jj++ )
         {
-          dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
-          dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
+          dpnt[0] = ctod( gAperture[name].m_path[ii][jj].X );
+          dpnt[1] = ctod( gAperture[name].m_path[ii][jj].Y );
           dpnt[2] = 1.0;
           _mulvec3(dpnt, transformMatrix, dpnt);
           point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
@@ -578,11 +561,12 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
       _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, ctod(cur_pnt.X), ctod(cur_pnt.Y));
       _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
 
-      for (ii=0; ii<gAperture[ name ].m_path.size(); ii++) {
-        for (size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++)
+      for ( ii = 0; ii < gAperture[name].m_path.size(); ii++ )
+      {
+        for ( size_t jj = 0; jj < gAperture[name].m_path[ii].size(); jj++ )
         {
-          dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
-          dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
+          dpnt[0] = ctod( gAperture[name].m_path[ii][jj].X );
+          dpnt[1] = ctod( gAperture[name].m_path[ii][jj].Y );
           dpnt[2] = 1.0;
           _mulvec3(dpnt, transformMatrix, dpnt);
           point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
@@ -596,91 +580,86 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
         fprintf(stdout, "# WARNING: empty polygon found for name %i, skipping\n", name);
         fprintf(stderr, "# WARNING: empty polygon found for name %i, skipping\n", name);
       }
-      else {
-
+      else
+      {
         if (!Orientation(res_point)) { ReversePath(res_point); }
 
-        if (_expose_bit(polarity, gAperture[name].m_exposure[0])) {
+        if (_expose_bit(polarity, gAperture[name].m_exposure[0]))
+        {
           clip.AddPath( res_point, ptSubject, true );
         }
-        else {
+        else
+        {
           clip.AddPath(res_point, ptClip, true);
-
           it_paths.clear();
           clip.Execute(ctDifference, it_paths, pftNonZero, pftNonZero);
-
           clip.Clear();
           clip.AddPaths(it_paths, ptSubject, true);
-
           _clip_update = 1;
         }
-
-        if (_clip_update) {
-          clip.Execute( ctUnion, result, pftNonZero, pftNonZero );
-        }
-
+        if ( _clip_update )
+          clip.Execute(ctUnion, result, pftNonZero, pftNonZero);
       }
-
     }
 
     //--
 
-    else if (item_nod->type == GERBER_SEGMENT_ARC) {
+    else if (item_nod->type == GERBER_SEGMENT_ARC)
+    {
       name = d_name;
-
       n_seg = _get_segment_count(item_nod->arc_r, gMinSegmentLength, gMinSegment);
 
-      ang_rad = item_nod->arc_ang_rad_beg;
+      double ang_rad = item_nod->arc_ang_rad_beg;
       tr = item_nod->arc_r;
-      tx = tr*cos(ang_rad) + item_nod->arc_center_x;
-      ty = tr*sin(ang_rad) + item_nod->arc_center_y;
+      tx = tr * cos(ang_rad) + item_nod->arc_center_x;
+      ty = tr * sin(ang_rad) + item_nod->arc_center_y;
 
-      for (int _segment=1; _segment<n_seg; _segment++) {
-
-        _p = ((double)(_segment-1)) / ((double)(n_seg-1));
+      for ( int _segment = 1; _segment < n_seg; _segment++ )
+      {
+        _p = ((double)(_segment - 1)) / ((double)(n_seg - 1));
 
         ang_rad = item_nod->arc_ang_rad_beg;
         ang_rad += item_nod->arc_ang_rad_del * _p;
 
         tr = item_nod->arc_r + (_p * item_nod->arc_r_deviation);
-        tx = tr*cos(ang_rad) + item_nod->arc_center_x;
-        ty = tr*sin(ang_rad) + item_nod->arc_center_y;
+        tx = tr * cos(ang_rad) + item_nod->arc_center_x;
+        ty = tr * sin(ang_rad) + item_nod->arc_center_y;
 
         point_list.clear();
 
         _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, tx, ty);
         _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
 
-        for (ii=0; ii<gAperture[ name ].m_path.size(); ii++)
+        for ( ii = 0; ii < gAperture[name].m_path.size(); ii++ )
         {
-          for (size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++)
+          for ( size_t jj = 0; jj < gAperture[name].m_path[ii].size(); jj++ )
           {
-            dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
-            dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
+            dpnt[0] = ctod( gAperture[name].m_path[ii][jj].X );
+            dpnt[1] = ctod( gAperture[name].m_path[ii][jj].Y );
             dpnt[2] = 1.0;
             _mulvec3(dpnt, transformMatrix, dpnt);
             point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
           }
         }
 
-        _p = ((double)(_segment)) / ((double)(n_seg-1));
+        _p = ((double)(_segment)) / ((double)(n_seg - 1));
 
         ang_rad = item_nod->arc_ang_rad_beg;
         ang_rad += item_nod->arc_ang_rad_del * _p;
 
         tr = item_nod->arc_r + (_p * item_nod->arc_r_deviation);
-        tx = tr*cos(ang_rad) + item_nod->arc_center_x;
-        ty = tr*sin(ang_rad) + item_nod->arc_center_y;
+        tx = tr * cos(ang_rad) + item_nod->arc_center_x;
+        ty = tr * sin(ang_rad) + item_nod->arc_center_y;
 
         _construct_transform_matrix(transformMatrix, gs->mirror_axis, gs->rotation_degree, gs->scale, tx, ty);
         _mulmat3x3(transformMatrix, transformMatrixParent, transformMatrix);
 
-        for (ii=0; ii<gAperture[ name ].m_path.size(); ii++)
+        for ( ii = 0; ii < gAperture[name].m_path.size(); ii++ )
         {
-          for (size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++)
+          for ( size_t jj = 0; jj < gAperture[name].m_path[ii].size(); jj++ )
           {
-            dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
-            dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
+            dpnt[0] = ctod( gAperture[name].m_path[ii][jj].X );
+            dpnt[1] = ctod( gAperture[name].m_path[ii][jj].Y );
             dpnt[2] = 1.0;
             _mulvec3(dpnt, transformMatrix, dpnt);
             point_list.push_back( dtoc( dpnt[0], dpnt[1] ) );
@@ -690,41 +669,39 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
         res_point.clear();
         ConvexHull( point_list, res_point );
 
-        if (res_point.size() == 0) {
+        if ( res_point.empty() )
+        {
           fprintf(stdout, "# WARNING: empty polygon found for name %i, skipping\n", name);
           fprintf(stderr, "# WARNING: empty polygon found for name %i, skipping\n", name);
         }
-        else {
+        else
+        {
+          if ( !Orientation(res_point) )
+            ReversePath(res_point);
 
-          if (!Orientation(res_point)) { ReversePath(res_point); }
-
-          if (_expose_bit(polarity, gAperture[name].m_exposure[0])) {
+          if ( _expose_bit(polarity, gAperture[name].m_exposure[0]) )
+          {
             clip.AddPath( res_point, ptSubject, true );
           }
-          else {
+          else
+          {
             clip.AddPath(res_point, ptClip, true);
-
             it_paths.clear();
             clip.Execute(ctDifference, it_paths, pftNonZero, pftNonZero);
-
             clip.Clear();
             clip.AddPaths(it_paths, ptSubject, true);
-
             _clip_update = 1;
           }
-
         }
-
-        if (_clip_update) {
+        if ( _clip_update )
           clip.Execute( ctUnion, result, pftNonZero, pftNonZero );
-        }
       }
     }
 
     //--
 
-    else if (item_nod->type == GERBER_FLASH) {
-
+    else if (item_nod->type == GERBER_FLASH)
+    {
       name = d_name;
       cur_pnt = dtoc( item_nod->x, item_nod->y );
 
@@ -736,13 +713,13 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
 
         aperture_clip.Clear();
         aperture_geom.clear();
-        for (ii=0; ii<gAperture[ name ].m_path.size(); ii++) {
-
+        for ( ii = 0; ii < gAperture[name].m_path.size(); ii++ )
+        {
           tmp_path.clear();
-          for ( size_t jj = 0; jj < gAperture[ name ].m_path[ii].size(); jj++ )
+          for ( size_t jj = 0; jj < gAperture[name].m_path[ii].size(); jj++ )
           {
-            dpnt[0] = ctod( gAperture[ name ].m_path[ii][jj].X );
-            dpnt[1] = ctod( gAperture[ name ].m_path[ii][jj].Y );
+            dpnt[0] = ctod( gAperture[name].m_path[ii][jj].X );
+            dpnt[1] = ctod( gAperture[name].m_path[ii][jj].Y );
             dpnt[2] = 1.0;
             _mulvec3(dpnt, transformMatrix, dpnt);
             tmp_path.push_back( dtoc( dpnt[0], dpnt[1] ) );
@@ -750,17 +727,19 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
 
           if (tmp_path.size() < 2) { fprintf(stdout, "## WARNING, tmp_path.size() %i\n", (int)tmp_path.size()); fflush(stdout); continue; }
 
-          int last_idx = (int)(tmp_path.size()-1);
+          int last_idx = (int)(tmp_path.size() - 1);
           if ((tmp_path[0].X != tmp_path[last_idx].X) ||
               (tmp_path[0].Y != tmp_path[last_idx].Y)) {
             fprintf(stdout, "## WARNING, tmp_path for %i is not closed!\n", name); fflush(stdout);
             tmp_path.push_back(tmp_path[0]);
           }
 
-          if (gAperture[name].m_exposure[ii]) {
+          if ( gAperture[name].m_exposure[ii] )
+          {
             aperture_clip.AddPath(tmp_path, ptSubject, true);
           }
-          else {
+          else
+          {
             aperture_clip.AddPath(tmp_path, ptClip, true);
             aperture_clip.Execute(ctDifference , aperture_geom, pftNonZero, pftNonZero);
             aperture_clip.Clear();
@@ -773,7 +752,8 @@ static int join_polygon_set_r(gerber_state_t *gs, Paths *_result, Clipper &clip,
         it_paths.clear();
         aperture_clip.Execute( ctUnion, it_paths, pftNonZero, pftNonZero );
 
-        if ( ! _expose_bit(polarity) ) {
+        if ( !_expose_bit(polarity) )
+        {
           clip.AddPaths(it_paths, ptClip, true);
           it_paths.clear();
           clip.Execute(ctDifference, it_paths, pftNonZero, pftNonZero);
@@ -898,7 +878,6 @@ int join_polygon_set(gerber_state_t *gs, Paths *_result)
 static int join_drill_set_r(gerber_state_t *gs, Paths *_result, const double *transformMatrixParent)
 {
   Paths &result = *_result;
-
   Path tmp_path;
 
   double transformMatrix[3*3];
@@ -931,6 +910,8 @@ static int join_drill_set_r(gerber_state_t *gs, Paths *_result, const double *tr
       const Aperture_realization &aprel = iter->second;
       for (const Path &path : aprel.m_path)
       {
+        if ( aprel.m_name != gDrill )
+          continue;
         tmp_path.clear();
         for (const IntPoint &pt : path)
         {
@@ -958,4 +939,28 @@ static int join_drill_set_r(gerber_state_t *gs, Paths *_result, const double *tr
 int join_drill_set(gerber_state_t *gs, Paths *_result)
 {
   return join_drill_set_r(gs, _result, identMatrix);
+}
+
+int join_cutout_set(gerber_state_t *gs, Paths *_result, int64_t _min_x, int64_t _max_x, int64_t _min_y, int64_t _max_y)
+{
+  Paths &result = *_result;
+  Path tmp_path;
+  double r = gCutout / 2;
+
+  double min_x = ctod(_min_x);
+  double max_x = ctod(_max_x);
+  double min_y = ctod(_min_y);
+  double max_y = ctod(_max_y);
+
+  double mid_x = (min_x + max_x) / 2;
+  double mid_y = (min_y + max_y) / 2;
+
+  result = {
+    { dtoc(min_x - r, mid_y + r), dtoc(min_x - r, max_y + r), dtoc(mid_x - r, max_y + r) },
+    { dtoc(mid_x + r, max_y + r), dtoc(max_x + r, max_y + r), dtoc(max_x + r, mid_y + r) },
+    { dtoc(max_x + r, mid_y - r), dtoc(max_x + r, min_y - r), dtoc(mid_x + r, min_y - r) },
+    { dtoc(mid_x - r, min_y - r), dtoc(min_x - r, min_y - r), dtoc(min_x - r, mid_y - r) },
+  };
+
+  return 0;
 }

@@ -52,13 +52,15 @@ static void realize_circle( gerber_state_t *gs,
   double a;
   Path empty_path;
 
-  if (gDrill) {
+  if ( (gDrill != 0) || gFindDrillSizes )
+  {
     idx = (int)ap.m_path.size();
     ap.m_path.push_back(empty_path);
     ap.m_path[idx].push_back( dtoc( 0, 0 ) );
     ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
     ap.m_hole_d = 2*r;
-    fprintf(stderr, "WARNING: realize_circle %f\n", ap.m_hole_d);
+    ap.m_hole_t = htDrill;
+    // fprintf(stderr, "WARNING: realize_circle %f\n", ap.m_hole_d);
     return;
   }
 
@@ -109,7 +111,8 @@ static void realize_obround( gerber_state_t *gs,
   double r, a;
   Path empty_path;
 
-  if (gDrill) {
+  if ( (gDrill != 0) || gFindDrillSizes )
+  {
     double x_len_abs = (x_len > 0) ? x_len : -x_len;
     double y_len_abs = (y_len > 0) ? y_len : -y_len;
     double x_len_sign = (x_len > 0) ? 1. : -1.;
@@ -128,7 +131,8 @@ static void realize_obround( gerber_state_t *gs,
     ap.m_path[idx].push_back( dtoc( x_len_abs * x_len_sign, y_len_abs * y_len_sign ) );
     ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
     ap.m_hole_d = r;
-    fprintf(stderr, "WARNING: realize_obround %f\n", ap.m_hole_d);
+    ap.m_hole_t = htSlot;
+    // fprintf(stderr, "WARNING: realize_obround %f\n", ap.m_hole_d);
     return;
   }
 

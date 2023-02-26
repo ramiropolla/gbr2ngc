@@ -44,7 +44,7 @@ void rapid(FILE* file, const char* axes, double one, double two, double three) {
   double coords[] = {one, two, three};
 
   if (gSeekRateSet && gCurRate != gSeekRate) {
-    fprintf(file, "%c%" GCODE_LENGTH_PRECISION "f\n", char_F, (double)gSeekRate);
+    fprintf(file, "%c%" GCODE_LENGTH_PRECISION "f\n", char_F, gSeekRate);
     gCurRate = gSeekRate;
   }
 
@@ -66,7 +66,7 @@ void cut(FILE* file, const char* axes, double one, double two, double three) {
   double coords[] = {one, two, three};
 
   if (gFeedRateSet && gCurRate != gFeedRate) {
-    fprintf(file, "%c%" GCODE_LENGTH_PRECISION "f\n", char_F, (double)gFeedRate);
+    fprintf(file, "%c%" GCODE_LENGTH_PRECISION "f\n", char_F, gFeedRate);
     gCurRate = gFeedRate;
   }
 
@@ -96,6 +96,13 @@ static void reorder_paths(std::vector<city_t> *_dst, const Paths &src)
       result_map.push_back(i);
   }
 
+  // check for trivial results
+  if ( gCutoutSet || result_map.size() <= 1 )
+  {
+    *_dst = result_map;
+    return;
+  }
+
   // populate costs
   const city_t n_total = result_map.size();
   city_t costs_size = n_total + 1; // +1 for origin
@@ -111,7 +118,7 @@ static void reorder_paths(std::vector<city_t> *_dst, const Paths &src)
     else
     {
       city_t i_idx = result_map[i];
-      if ( gDrill )
+      if ( gDrill != 0 )
         from = &src[i_idx].back();
       else
         from = &src[i_idx].front();
@@ -206,8 +213,37 @@ int export_paths_to_gcode_unit( FILE *ofp, const Paths &paths, int src_units_0in
 
   if (gGCodeHeader)   { fprintf(ofp, "%s\n", gGCodeHeader); }
 
-  if (gHumanReadable && gShowComments) { fprintf(ofp, "\n"); }
-  if (gShowComments)  { fprintf(ofp, "\n( feed %i seek %i zsafe %f zcut %f )\n", gFeedRate, gSeekRate, gZSafe, gZCut ); }
+  if (gShowComments)  { fprintf(ofp, "( feed %f seek %f zsafe %f zcut %f )\n", gFeedRate, gSeekRate, gZSafe, gZCut ); }
+
+  {
+    if (gShowComments) {
+      fprintf(ofp, "( segment length %f )\n", gMinSegmentLength);
+      fprintf(ofp, "( union path size %lu )\n", paths.size());
+      fprintf(ofp, "\n");
+      fprintf(ofp, "( start )\n");
+    }
+    // G20 - Inch Units
+    // G21 - Millimeter Units
+    fprintf(ofp, "%c%s\n", char_G, (gMetricUnits ? "21" : "20"));
+    // G90 - Absolute Positioning
+    fprintf(ofp, "%c90\n", char_G);
+    // G94 - Units per Minute Feed Mode
+    fprintf(ofp, "%c94\n", char_G);
+    // Set Feed Rate
+    fprintf(ofp, "%c%" GCODE_LENGTH_PRECISION "f\n", char_F, gFeedRate);
+    gCurRate = gFeedRate;
+    // Move Z up to zsafe
+    rapid(ofp, "z", gZSafe);
+    // M03 - Spindle Clockwise
+    fprintf(ofp, "%c03", char_M);
+    if (gSpindleSpeedSet) {
+      // Spindle Speed
+      fprintf(ofp, " %c%d", char_S, gSpindleSpeed);
+    }
+    fprintf(ofp, "\n");
+    // G4 - Dwell
+    fprintf(ofp, "%c4 %c1\n", char_G, char_P);
+  }
 
   reorder_paths(&reordered_paths, paths);
 
@@ -216,10 +252,10 @@ int export_paths_to_gcode_unit( FILE *ofp, const Paths &paths, int src_units_0in
     const Path &path = paths[i];
     bool first = true;
 
-    if (gHumanReadable && gShowComments) { fprintf(ofp, "\n\n"); }
+    if (gHumanReadable && gShowComments) { fprintf(ofp, "\n"); }
     if (gShowComments)  { fprintf(ofp, "( path %zu )\n", (size_t) i); }
 
-    if (gDrill)
+    if ( gDrill != 0 )
     {
       for (const IntPoint &pt : path)
       {
@@ -256,13 +292,26 @@ int export_paths_to_gcode_unit( FILE *ofp, const Paths &paths, int src_units_0in
         }
       }
 
-      // go back to start
-      cut(ofp, "xy", start_x, start_y);
+      if ( !gCutoutSet )
+      {
+        // go back to start
+        cut(ofp, "xy", start_x, start_y);
+      }
       rapid(ofp, "z", gZSafe);
     }
   }
 
-  if (gHumanReadable && gShowComments) { fprintf(ofp, "\n\n"); }
+  {
+    if (gShowComments) {
+      fprintf(ofp, "\n");
+      fprintf(ofp, "( end )\n");
+    }
+    // Move X/Y back to origin
+    rapid(ofp, "xy", 0, 0);
+    // M05 - Spindle Off
+    fprintf(ofp, "%c05\n", char_M);
+  }
+
   if (gGCodeFooter)   { fprintf(ofp, "%s\n", gGCodeFooter); }
 
   return 0;

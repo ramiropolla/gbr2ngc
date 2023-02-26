@@ -32,11 +32,11 @@ char *gConfigFilename = NULL;
 char *gGCodeHeader = NULL;
 char *gGCodeFooter = NULL;
 
-int gFeedRate = 10;
+double gFeedRate = 10;
 bool gFeedRateSet = false;
-int gSeekRate = 100;
+double gSeekRate = 100;
 bool gSeekRateSet = false;
-int gCurRate;
+double gCurRate;
 int gSpindleSpeed = 1000;
 bool gSpindleSpeedSet = false;
 
@@ -50,10 +50,6 @@ char char_M = 'm';
 char char_P = 'p';
 char char_S = 's';
 
-int gScanLineVertical = 0;
-int gScanLineHorizontal = 0;
-int gScanLineZenGarden = 0;
-
 double gZSafe = 0.1;
 double gZCut = -0.05;
 
@@ -61,20 +57,16 @@ FILE *gOutStream = stdout;
 FILE *gInpStream = stdin;
 FILE *gCfgStream;
 
-double eps = 0.000001;
-double gRadius = 0.0;
-double gFillRadius = -1.0;
-
 bool gFindExtremes = false;
 int64_t gOffsetX = 0;
 int64_t gOffsetY = 0;
 double gScaleX = 1.0;
 double gScaleY = 1.0;
 
-int gInvertFlag = 0;
-int gSimpleInfill = 0;
-int gDrawOutline = 1;
-bool gDrill = false;
+bool gFindDrillSizes = false;
+int gDrill = 0;
+double gCutout = 0.0;
+bool gCutoutSet = false;
 
 int gMinSegment = 8;
 double gMinSegmentLengthInch = 0.004;
@@ -84,9 +76,6 @@ double gMinSegmentLength = -1.0;
 ApertureNameMap gAperture;
 
 ApertureBlockMap gApertureBlock;
-
-struct timeval gProfileStart;
-struct timeval gProfileEnd;
 
 // local_exposure - { 1 - add, 0 - remove }
 // global_exposure - { 1 - additive, 0 - subtractive}
