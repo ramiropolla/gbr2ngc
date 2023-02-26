@@ -55,12 +55,12 @@ if options.FCu:
 # drill
 if options.PTH:
   # get drill sizes
-  args = GBR2NGC_FLAGS.split() + "--feed=1 --scale-x=-1 --zcut=-0.1 --find-drill-sizes".split()
+  args = GBR2NGC_FLAGS.split() + "--feed=3 --slot-rate=0.5 --scale-x=-1 --zcut=-0.1 --find-drill-sizes".split()
   result = subprocess.run([ GBR2NGC ] + args + [ options.PTH ], stdout=subprocess.PIPE)
   drill_sizes = json.loads(result.stdout)
   for drill in drill_sizes:
-    args = GBR2NGC_FLAGS.split() + f"--feed=1 --scale-x=-1 --zcut=-0.1 --drill={drill}".split()
-    fname = f"{options.out}/{drill_sizes[drill]['type']}_{round(drill_sizes[drill]['diameter'] * 10):02}.gcode"
+    args = GBR2NGC_FLAGS.split() + f"--feed=3 --slot-rate=0.5 --scale-x=-1 --zcut=-0.1 --drill={drill}".split()
+    fname = f"{options.out}/{drill_sizes[drill]['type']}_{drill}_{round(drill_sizes[drill]['diameter'] * 10):02}.gcode"
     run_args = [ GBR2NGC ] + args + [ options.PTH ] + [ "-o", fname ]
     # print(' '.join(run_args))
     result = subprocess.run(run_args, stdout=subprocess.PIPE)

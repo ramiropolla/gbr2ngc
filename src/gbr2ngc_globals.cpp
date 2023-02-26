@@ -36,6 +36,8 @@ double gFeedRate = 10;
 bool gFeedRateSet = false;
 double gSeekRate = 100;
 bool gSeekRateSet = false;
+double gSlotRate = 1;
+bool gSlotRateSet = false;
 double gCurRate;
 int gSpindleSpeed = 1000;
 bool gSpindleSpeedSet = false;

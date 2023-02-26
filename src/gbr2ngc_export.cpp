@@ -266,7 +266,15 @@ int export_paths_to_gcode_unit( FILE *ofp, const Paths &paths, int src_units_0in
           cut(ofp, "z", gZCut);
           first = false;
         } else {
+          double feed_rate;
+          if ( gSlotRateSet )
+          {
+            feed_rate = gFeedRate;
+            gFeedRate = gSlotRate;
+          }
           cut(ofp, "xy", x, y);
+          if ( gSlotRateSet )
+            gFeedRate = feed_rate;
         }
       }
 

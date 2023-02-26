@@ -51,6 +51,7 @@ static struct option gLongOption[] = {
 
   {"feed",              required_argument, nullptr, 'f'},
   {"seek",              required_argument, nullptr, 's'},
+  {"slot-rate",         required_argument, nullptr, 'r'},
   {"spindle-speed",     required_argument, nullptr, 'S'},
 
   {"zsafe",             required_argument, nullptr, 'z'},
@@ -228,6 +229,10 @@ static bool set_option(const char option_char, const char* optarg)
     case 's':
       gSeekRate = atof(optarg);
       gSeekRateSet = true;
+      break;
+    case 'r':
+      gSlotRate = atof(optarg);
+      gSlotRateSet = true;
       break;
     case 'z':
       gZSafe = atof(optarg);

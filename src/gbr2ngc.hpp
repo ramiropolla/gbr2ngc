@@ -119,6 +119,8 @@ extern double gFeedRate;
 extern bool gFeedRateSet;
 extern double gSeekRate;
 extern bool gSeekRateSet;
+extern double gSlotRate;
+extern bool gSlotRateSet;
 extern double gCurRate;
 extern int gSpindleSpeed;
 extern bool gSpindleSpeedSet;
