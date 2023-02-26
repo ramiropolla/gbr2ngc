@@ -18,7 +18,7 @@ if not (options.BCu or options.FCu):
   parser.error("BCu or FCu required")
 
 GBR2NGC = "./gbr2ngc"
-GBR2NGC_FLAGS = "--spindle-speed 9000 --zsafe=0.1 --inches --no-comment --uppercase"
+GBR2NGC_FLAGS = "--spindle-speed 9000 --zsafe=0.03937 --inches --no-comment --uppercase"
 
 # get extremes
 args = GBR2NGC_FLAGS.split() + [ "--find-extremes" ]
