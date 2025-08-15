@@ -124,11 +124,13 @@ static void realize_obround( gerber_state_t *gs,
     }
     x_len_abs -= r;
     y_len_abs -= r;
+    x_len_abs /= 2;
+    y_len_abs /= 2;
 
     idx = (int)ap.m_path.size();
     ap.m_path.push_back(empty_path);
-    ap.m_path[idx].push_back( dtoc( 0, 0 ) );
-    ap.m_path[idx].push_back( dtoc( x_len_abs * x_len_sign, y_len_abs * y_len_sign ) );
+    ap.m_path[idx].push_back( dtoc( -x_len_abs * x_len_sign, -y_len_abs * y_len_sign ) );
+    ap.m_path[idx].push_back( dtoc( +x_len_abs * x_len_sign, +y_len_abs * y_len_sign ) );
     ap.m_exposure.push_back( _expose_bit(1, gs->polarity) );
     ap.m_hole_d = r;
     ap.m_hole_t = htSlot;

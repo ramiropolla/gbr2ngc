@@ -62,5 +62,5 @@ if options.PTH:
     args = GBR2NGC_FLAGS.split() + f"--feed=3 --slot-rate=0.5 --scale-x=-1 --zcut=-0.1 --drill={drill}".split()
     fname = f"{options.out}/{drill_sizes[drill]['type']}_{drill}_{round(drill_sizes[drill]['diameter'] * 10):02}.gcode"
     run_args = [ GBR2NGC ] + args + [ options.PTH ] + [ "-o", fname ]
-    # print(' '.join(run_args))
+    print(' '.join(run_args))
     result = subprocess.run(run_args, stdout=subprocess.PIPE)
